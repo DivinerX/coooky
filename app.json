@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Koch Assistent",
+    "slug": "koch-assistent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "kochapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
