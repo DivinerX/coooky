@@ -18,3 +18,9 @@ export interface Recipe {
   time: string;
   servings: number;
 }
+
+export interface ShoppingListItem {
+  name: string;
+  amount: string;
+  unit: string;
+}
