@@ -3,24 +3,38 @@ import 'react-native-url-polyfill/auto';
 
 const DEFAULT_API_KEY = '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';
 
-// Initialize with default API key
 let openai = new OpenAI({
   apiKey: DEFAULT_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
-// Initialize the OpenAI client
-export const initializeOpenAI = async () => {
+// Check if query is cooking-related using AI
+export const checkIfCookingRelated = async (text) => {
   try {
-    // Always return true since we're using a default API key
-    return true;
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo-1106",
+      messages: [
+        {
+          role: "system",
+          content: "You are a cooking topic validator. Your only job is to determine if a query is cooking-related or not. Respond with a JSON object containing a boolean 'isCookingRelated' field and a 'message' field. For non-cooking queries, provide a polite response in German explaining that you can only help with cooking-related topics. The tone should be friendly and helpful."
+        },
+        {
+          role: "user",
+          content: `Determine if this query is cooking-related: "${text}"`
+        }
+      ],
+      temperature: 0,
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    return result;
   } catch (error) {
-    console.error('Error initializing OpenAI client:', error);
-    return false;
+    console.error('Error checking if query is cooking-related:', error);
+    throw error;
   }
 };
 
-// Generate cooking suggestions
 export const generateCookingSuggestions = async (preferences, recipeCount, portionsPerRecipe) => {
   try {
     if (!openai) {
@@ -30,7 +44,6 @@ export const generateCookingSuggestions = async (preferences, recipeCount, porti
       }
     }
 
-    // Create a prompt that instructs the model exactly what we want
     const prompt = `Generate ${recipeCount} detailed recipes based on these preferences: "${preferences}".
 
 For each recipe, please provide:
@@ -60,7 +73,7 @@ Format the response as a structured JSON object with the following format:
 For images, use appropriate food images from Unsplash with realistic URLs. Categorize ingredients in these categories: "Obst & Gemüse", "Milchprodukte", "Fleisch & Fisch", "Getreideprodukte", "Gewürze", "Öle & Essig", "Hülsenfrüchte", "Sonstiges".`;
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4-1106-preview",
       messages: [
         {
           role: "system",
@@ -75,21 +88,10 @@ For images, use appropriate food images from Unsplash with realistic URLs. Categ
       response_format: { type: "json_object" }
     });
 
-    // Parse the response
     const content = response.choices[0].message.content;
     return JSON.parse(content);
   } catch (error) {
     console.error('Error generating cooking suggestions:', error);
     throw error;
-  }
-};
-
-// Function to ensure we have the API key and initialize the client
-export const ensureOpenAIInitialized = async () => {
-  try {
-    return await initializeOpenAI();
-  } catch (error) {
-    console.error('Error ensuring OpenAI is initialized:', error);
-    return false;
   }
 };

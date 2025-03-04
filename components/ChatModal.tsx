@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Modal, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Modal, Image, ActivityIndicator, Alert } from 'react-native';
 import { Mic, Send, X, ShoppingCart, ChevronRight } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { Message } from '@/types';
+import { AnimatedGeneratingMessage } from './AnimatedGeneratingMessage';
 
 interface IChatModalProps {
   isGeneratingRecipes: boolean;
@@ -23,6 +24,7 @@ interface IChatModalProps {
   navigateToShoppingList: () => void;
   startCookingRecipe: (recipe: any) => void;
   scrollViewRef: any;
+  addToWeekPlan: () => void;
 }
 
 export const ChatModal = ({
@@ -44,8 +46,22 @@ export const ChatModal = ({
   addToShoppingList,
   navigateToShoppingList,
   startCookingRecipe,
-  scrollViewRef
+  scrollViewRef,
+  addToWeekPlan,
 }: IChatModalProps) => {
+  const ProgressIndicator = ({ stage, progress }: { stage: string, progress: number }) => (
+    <View style={styles.progressContainer}>
+      <View style={styles.progressBar}>
+        <View 
+          style={[
+            styles.progressFill, 
+            { width: `${progress}%` }
+          ]} 
+        />
+      </View>
+    </View>
+  );
+
   return (
     < Modal
       visible={chatModalVisible}
@@ -85,11 +101,25 @@ export const ChatModal = ({
                   </Text>
 
                   {message.isGenerating && (
-                    <ActivityIndicator
-                      size="small"
-                      color="#FF6B35"
-                      style={styles.loadingIndicator}
-                    />
+                    <View style={styles.generatingContainer}>
+                      {message.progressStage && (
+                        <>
+                          <ProgressIndicator 
+                            stage={message.progressStage} 
+                            progress={message.progressPercent || 0} 
+                          />
+                          <AnimatedGeneratingMessage
+                            message={message.progressStage}
+                            style={styles.messageText}
+                          />
+                        </>
+                      )}
+                      <ActivityIndicator
+                        size="small"
+                        color="#FF6B35"
+                        style={styles.loadingIndicator}
+                      />
+                    </View>
                   )}
                 </View>
 
@@ -182,6 +212,30 @@ export const ChatModal = ({
                     <ChevronRight size={24} color="#DDD" />
                   </TouchableOpacity>
                 ))}
+
+                <TouchableOpacity
+                  style={styles.addToWeekPlanButton}
+                  onPress={async () => {
+                    try {
+                      await addToWeekPlan();
+                      // Optional: Show success feedback
+                      Alert.alert(
+                        "Erfolg",
+                        "Rezepte wurden zum Wochenplan hinzugefügt"
+                      );
+                    } catch (error) {
+                      // Handle error
+                      Alert.alert(
+                        "Fehler",
+                        "Rezepte konnten nicht zum Wochenplan hinzugefügt werden"
+                      );
+                    }
+                  }}
+                >
+                  <Text style={styles.addToWeekPlanButtonText}>
+                    Zum Wochenplan hinzufügen
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
@@ -273,6 +327,9 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 22,
+    ...(Platform.OS === 'web' ? {
+      transition: 'opacity 0.3s ease-in-out' as any
+    } : {})
   },
   userMessageText: {
     color: '#FFF',
@@ -282,6 +339,7 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 10,
+    transform: [{ scale: 1.2 }], // Make the loading indicator slightly larger
   },
   surpriseMeButton: {
     backgroundColor: '#FF6B35',
@@ -418,5 +476,41 @@ const styles = StyleSheet.create({
   recipeCardPortions: {
     fontSize: 14,
     color: '#666',
+  },
+  progressContainer: {
+    marginTop: 10,
+    marginBottom: 10,
+    width: '100%',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#FF6B35',
+    borderRadius: 3,
+    ...(Platform.OS === 'web' ? {
+      transition: 'width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' as any // Bouncy effect
+    } : {})
+  },
+  generatingContainer: {
+    width: '100%',
+    alignItems: 'center',
+    padding: 10,
+  },
+  addToWeekPlanButton: {
+    backgroundColor: '#FF6B35',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  addToWeekPlanButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

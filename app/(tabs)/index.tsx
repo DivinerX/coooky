@@ -5,10 +5,11 @@ import { Mic, Send, X, Calendar, ShoppingCart, ChevronRight, AlertCircle } from 
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { addToShoppingList as addItemsToShoppingList } from '../../utils/shoppingListManager';
-import { generateCookingSuggestions } from '../../utils/openAiService';
+import { checkIfCookingRelated, generateCookingSuggestions } from '../../utils/openAiService';
 import { setCurrentRecipe } from '../../utils/recipeManager';
 import { Message, Recipe, ShoppingListItem } from '../../types';
 import { ChatModal } from '@/components/ChatModal';
+import { addRecipesToWeekPlan, addNewWeekPlan, getWeekPlans } from '@/utils/weekPlanManager';
 
 // Define cuisine categories
 const CUISINE_CATEGORIES = [
@@ -35,6 +36,10 @@ export default function MainScreen() {
   const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[]>([]);
   const [shoppingListItems, setShoppingListItems] = useState<ShoppingListItem[]>([]);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState<boolean>(false);
+  const [generationProgress, setGenerationProgress] = useState<{
+    stage: string;
+    progress: number;
+  }>({ stage: '', progress: 0 });
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
@@ -96,72 +101,82 @@ export default function MainScreen() {
     setCurrentMessage('');
   };
 
-  const processUserMessage = (message: string) => {
+  const processUserMessage = async (message: string) => {
     // If we're currently generating recipes, don't process new messages
     if (isGeneratingRecipes) return;
 
-    // If "Überrasch mich" clicked, select a random cuisine category
-    if (message.toLowerCase().includes('überrasch') && !userPreferences) {
-      handleSurpriseMe();
-      return;
-    }
-
-    // If user preferences set but no recipe count yet
-    if (userPreferences && !selectedRecipeCount) {
-      const count = parseRecipeCount(message);
-      if (count) {
-        handleRecipeCountSelection(count);
-      } else {
-        // If invalid input, ask again
+    // Only check if cooking-related for the initial message
+    if (!userPreferences) {
+      try {
+        const topicCheck = await checkIfCookingRelated(message);
+        if (!topicCheck.isCookingRelated) {
+          const aiResponse = {
+            id: Date.now().toString(),
+            text: topicCheck.message || "Entschuldigung, ich kann nur Fragen zum Kochen und Rezepten beantworten. Bitte stelle mir eine koch-bezogene Frage.",
+            isUser: false
+          };
+          setMessages(prev => [...prev, aiResponse]);
+          // Reset any existing preferences or selections
+          setUserPreferences(null);
+          setSelectedRecipeCount(null);
+          setSelectedServings(null);
+          return;
+        }
+        
+        setUserPreferences(message);
         setTimeout(() => {
           const aiResponse = {
             id: Date.now().toString(),
-            text: "Bitte wähle, wie viele Rezepte ich erstellen soll (2-5):",
+            text: `Super, wie viele Rezepte möchtest du?`,
             isUser: false,
             recipeCountOptions: true
           };
           setMessages(prev => [...prev, aiResponse]);
         }, 500);
+        return;
+      } catch (error) {
+        console.error('Error checking if cooking-related:', error);
+        return;
       }
-      return;
     }
 
-    // If recipe count is selected but servings aren't
-    if (selectedRecipeCount && !selectedServings) {
-      const servings = parseServings(message);
-      if (servings) {
-        handleServingsSelection(servings);
-      } else {
-        // If invalid input, ask again
-        setTimeout(() => {
-          const aiResponse = {
-            id: Date.now().toString(),
-            text: "Wieviel Portionen soll ich pro Rezept planen?",
-            isUser: false,
-            servingsOptions: true
-          };
-          setMessages(prev => [...prev, aiResponse]);
-        }, 500);
+    // Only proceed with these steps if we already have confirmed cooking-related content
+    if (userPreferences) {
+      if (!selectedRecipeCount) {
+        const count = parseRecipeCount(message);
+        if (count) {
+          handleRecipeCountSelection(count);
+        } else {
+          setTimeout(() => {
+            const aiResponse = {
+              id: Date.now().toString(),
+              text: "Bitte wähle, wie viele Rezepte ich erstellen soll (2-5):",
+              isUser: false,
+              recipeCountOptions: true
+            };
+            setMessages(prev => [...prev, aiResponse]);
+          }, 500);
+        }
+        return;
       }
-      return;
-    }
 
-    // If no user preferences yet (first message)
-    if (!userPreferences) {
-      // Store the user's food preferences
-      setUserPreferences(message);
-
-      // Ask for recipe count
-      setTimeout(() => {
-        const aiResponse = {
-          id: Date.now().toString(),
-          text: `Super, wie viele Rezepte möchtest du?`,
-          isUser: false,
-          recipeCountOptions: true
-        };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 500);
-      return;
+      if (!selectedServings) {
+        const servings = parseServings(message);
+        if (servings) {
+          handleServingsSelection(servings);
+        } else {
+          setTimeout(() => {
+            const aiResponse = {
+              id: Date.now().toString(),
+              text: "Wieviel Portionen soll ich pro Rezept planen?",
+              isUser: false,
+              servingsOptions: true
+            };
+            setMessages(prev => [...prev, aiResponse]);
+          }, 500);
+        }
+        return;
+      }
     }
 
     // Handle confirmation or changes if we already have all necessary selections
@@ -278,11 +293,106 @@ export default function MainScreen() {
   ): Promise<void> => {
     setIsGeneratingRecipes(true);
 
+    // Calculate total expected time (55 seconds as base + 5 seconds per recipe)
+    const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
+    
+    const updateProgressMessage = (stage: string, progress: number) => {
+      setGenerationProgress({ stage, progress });
+      setMessages(prev => prev.map(msg => {
+        if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
+          return {
+            ...msg,
+            text: `Gerne. Ich plane mit ${servings} Portionen pro Rezept und erstelle jetzt ${recipeCount} passende Rezepte für dich...\n\n${stage}`,
+            progressStage: stage,
+            progressPercent: progress,
+            isGenerating: true
+          };
+        }
+        return msg;
+      }));
+    };
+
     try {
-      const result = await generateCookingSuggestions(preferences, recipeCount, servings);
+      // Start the actual API call early
+      const recipePromise = generateCookingSuggestions(preferences, recipeCount, servings);
+
+      // Progress stages without any emojis or special characters
+      const stages = [
+        { message: 'Starte Rezeptsuche...', progress: 5 },
+        { message: 'Durchsuche Kochbücher...', progress: 15 },
+        { message: 'Analysiere Zutaten...', progress: 25 },
+        { message: 'Erstelle Rezeptentwürfe...', progress: 35 },
+        { message: 'Optimiere Zutatenliste...', progress: 45 },
+        { message: 'Verfeinere Gewürze...', progress: 55 },
+        { message: 'Berechne Mengen...', progress: 65 },
+        { message: 'Prüfe Kombinationen...', progress: 75 },
+        { message: 'Finalisiere Rezepte...', progress: 85 },
+        { message: 'Bereite Vorschläge vor...', progress: 95 }
+      ];
+
+      // Calculate base interval between updates
+      const baseInterval = Math.floor(totalExpectedTime / (stages.length + 1));
+
+      // Function to add random variation to intervals
+      const getRandomizedInterval = (baseTime: number) => {
+        const variation = baseTime * 0.4; // 40% variation for more unpredictability
+        return baseTime + (Math.random() * variation - variation / 2);
+      };
+
+      // Show initial stage with bounce animation
+      updateProgressMessage(stages[0].message, stages[0].progress);
+
+      // Progress through stages with randomized timing and bounce effects
+      for (let i = 1; i < stages.length; i++) {
+        const stage = stages[i];
+        const interval = getRandomizedInterval(baseInterval);
+        
+        await new Promise(resolve => setTimeout(resolve, interval));
+        
+        // Add multiple intermediate steps with micro-animations
+        const intermediateSteps = 4;
+        const progressDiff = stage.progress - stages[i-1].progress;
+        const smallIncrement = progressDiff / intermediateSteps;
+        
+        for (let j = 1; j <= intermediateSteps; j++) {
+          const intermediateProgress = stages[i-1].progress + (smallIncrement * j);
+          
+          // Add random "bounce" effect
+          const bounceVariation = Math.sin(j * Math.PI / 2) * 2;
+          const adjustedProgress = Math.min(100, Math.max(0, intermediateProgress + bounceVariation));
+          
+          updateProgressMessage(stage.message, adjustedProgress);
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Settle on the actual target progress
+        updateProgressMessage(stage.message, stage.progress);
+      }
+
+      // Wait for the API response
+      const result = await recipePromise;
 
       if (result && result.recipes && result.recipes.length > 0) {
         setGeneratedRecipes(result.recipes);
+
+        // Smooth transition to completion
+        for (let p = 95; p <= 100; p++) {
+          updateProgressMessage('✨ Serviere die fertigen Rezepte...', p);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        // Update final message
+        setMessages(prev => prev.map(msg => {
+          if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
+            return {
+              ...msg,
+              isGenerating: false,
+              progressStage: '🎉 Fertig! Lass es dir schmecken!',
+              progressPercent: 100
+            };
+          }
+          return msg;
+        }));
 
         // Prepare recipe list text
         let recipeListText = `Hier sind ${result.recipes.length} Rezepte basierend auf deinen Wünschen:\n\n`;
@@ -290,36 +400,19 @@ export default function MainScreen() {
           recipeListText += `${index + 1}. ${recipe.title} (${recipe.time})\n`;
         });
 
-        // Send recipe list as a message
-        const recipesResponse: Message = {
+        // Add success message
+        const successResponse: Message = {
           id: Date.now().toString(),
           text: recipeListText,
           isUser: false,
+          showAddToShoppingListButton: true
         };
-        setMessages(prev => [...prev, recipesResponse]);
-
-        // Aggregate ingredients for shopping list
-        const allIngredients: any[] = [];
-        result.recipes.forEach((recipe: any) => {
-          if (recipe.ingredients && recipe.ingredients.length > 0) {
-            allIngredients.push(...recipe.ingredients);
-          }
-        });
-
-        setShoppingListItems(allIngredients);
-
-        // Show shopping list button immediately after recipes
-        const shoppingListResponse: Message = {
-          id: Date.now().toString(),
-          text: "Soll ich die Zutaten auf die Einkaufsliste setzen?",
-          isUser: false,
-          showAddToShoppingListButton: true  // Using consistent property name
-        };
-        setMessages(prev => [...prev, shoppingListResponse]);
+        setMessages(prev => [...prev, successResponse]);
       } else {
         throw new Error('Keine Rezepte generiert');
       }
     } catch (error: any) {
+      updateProgressMessage('❌ Ups! Die Suppe ist angebrannt...', 0);
       console.error('Error generating recipes:', error);
       const errorResponse: Message = {
         id: Date.now().toString(),
@@ -364,12 +457,12 @@ export default function MainScreen() {
     }
   };
 
-  const addToShoppingList = () => {
+  const addToShoppingList = async () => {
     // Add the items to the shopping list using the shopping list manager
     if (shoppingListItems.length > 0) {
       // Create a current date to add the items to the current week's shopping list
       const today = new Date();
-      addItemsToShoppingList(shoppingListItems, today);
+      await addItemsToShoppingList(shoppingListItems, today); // Add await here
 
       // Show confirmation message
       const confirmationMessage: Message = {
@@ -382,9 +475,14 @@ export default function MainScreen() {
     }
   };
 
-  const navigateToShoppingList = () => {
+  const navigateToShoppingList = async () => {
     // Close modal and navigate to shopping list
     setChatModalVisible(false);
+    
+    // Small delay to ensure the modal is closed before navigation
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Navigate to shopping list
     router.push('/shopping');
   };
 
@@ -414,6 +512,33 @@ export default function MainScreen() {
         setMessages(prev => [...prev, voiceMessage]);
         processUserMessage(voiceText);
       }, 2000);
+    }
+  };
+
+  const handleAddToWeekPlan = async () => {
+    // Create a new week plan if none exists
+    const weekPlans = getWeekPlans();
+    let currentWeekPlan;
+    
+    if (weekPlans.length === 0) {
+      currentWeekPlan = await addNewWeekPlan(0); // Create plan for current week
+    } else {
+      currentWeekPlan = weekPlans[0]; // Use the most recent week plan
+    }
+
+    // Add the generated recipes to the week plan
+    const success = await addRecipesToWeekPlan(currentWeekPlan.id, generatedRecipes);
+
+    if (success) {
+      // Add a success message to the chat
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        text: 'Die Rezepte wurden erfolgreich zum Wochenplan hinzugefügt.',
+        isUser: false,
+      }]);
+
+      // Optional: Navigate to the planner screen
+      router.push('/planner');
     }
   };
 
@@ -474,6 +599,7 @@ export default function MainScreen() {
         navigateToShoppingList={navigateToShoppingList}
         startCookingRecipe={startCookingRecipe}
         scrollViewRef={scrollViewRef}
+        addToWeekPlan={handleAddToWeekPlan}
       />
     </SafeAreaView>
   );

@@ -2,13 +2,14 @@ export interface Message {
   id: string;
   text: string;
   isUser: boolean;
-  servingsOptions?: boolean;
   isGenerating?: boolean;
   showSurpriseMe?: boolean;
-  showShoppingListButton?: boolean;
-  showShoppingListNavigateButton?: boolean;
   recipeCountOptions?: boolean;
+  servingsOptions?: boolean;
   showAddToShoppingListButton?: boolean;
+  showShoppingListNavigateButton?: boolean;
+  progressStage?: string;
+  progressPercent?: number;
 }
 
 export interface Recipe {

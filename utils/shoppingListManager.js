@@ -1,4 +1,6 @@
-// Shopping list manager utility
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SHOPPING_LISTS_KEY = 'shopping_lists';
 
 // Format date as "DD.MM.YYYY"
 const formatDate = (date) => {
@@ -32,16 +34,40 @@ const getWeekRange = (date) => {
   };
 };
 
-// Mock storage for shopping lists
+// Initialize shopping lists from storage
 let shoppingLists = [];
 
+// Load shopping lists from storage
+const loadShoppingLists = async () => {
+  try {
+    const storedLists = await AsyncStorage.getItem(SHOPPING_LISTS_KEY);
+    if (storedLists) {
+      shoppingLists = JSON.parse(storedLists);
+    }
+  } catch (error) {
+    console.error('Error loading shopping lists:', error);
+  }
+};
+
+// Save shopping lists to storage
+const saveShoppingLists = async () => {
+  try {
+    await AsyncStorage.setItem(SHOPPING_LISTS_KEY, JSON.stringify(shoppingLists));
+  } catch (error) {
+    console.error('Error saving shopping lists:', error);
+  }
+};
+
 // Get all shopping lists
-export const getShoppingLists = () => {
+export const getShoppingLists = async () => {
+  await loadShoppingLists();
   return shoppingLists;
 };
 
-// Add a new shopping list for a specific week
-export const addNewShoppingList = (weeksAhead = 0) => {
+// Add a new shopping list
+export const addNewShoppingList = async (weeksAhead = 0) => {
+  await loadShoppingLists();
+  
   const today = new Date();
   const targetDate = new Date(today);
   targetDate.setDate(today.getDate() + (weeksAhead * 7));
@@ -60,9 +86,8 @@ export const addNewShoppingList = (weeksAhead = 0) => {
     return shoppingLists[existingListIndex];
   }
   
-  // Create new list
   const newList = {
-    id: `week-${weekNumber}-${year}`,
+    id: `shopping-week-${weekNumber}-${year}`,
     name: `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
     weekNumber,
     year,
@@ -70,141 +95,158 @@ export const addNewShoppingList = (weeksAhead = 0) => {
     categories: []
   };
   
-  // Add to beginning of array
   shoppingLists.unshift(newList);
-  
+  await saveShoppingLists();
   return newList;
 };
 
 // Add ingredients to shopping list
-export const addToShoppingList = (ingredients, date = new Date(), targetWeekNumber = null, targetYear = null) => {
-  let weekNumber, year, weekRange;
+export const addToShoppingList = async (ingredients, date = new Date()) => {
+  await loadShoppingLists();
   
-  if (targetWeekNumber && targetYear) {
-    // Use specified week and year
-    weekNumber = targetWeekNumber;
-    year = targetYear;
-    
-    // Create a date for this week to get the range
-    const targetDate = new Date(date);
-    // Adjust to the target week
-    const currentWeekNumber = getWeekNumber(targetDate);
-    const weekDiff = targetWeekNumber - currentWeekNumber;
-    targetDate.setDate(targetDate.getDate() + (weekDiff * 7));
-    
-    weekRange = getWeekRange(targetDate);
-  } else {
-    // Use current date
-    weekNumber = getWeekNumber(date);
-    year = date.getFullYear();
-    weekRange = getWeekRange(date);
-  }
+  const weekNumber = getWeekNumber(date);
+  const year = date.getFullYear();
   
-  // Check if a list for this week already exists
   let listIndex = shoppingLists.findIndex(
     list => list.weekNumber === weekNumber && list.year === year
   );
   
-  // Create new list if it doesn't exist
   if (listIndex === -1) {
-    const newList = {
-      id: `week-${weekNumber}-${year}`,
-      name: `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
-      weekNumber,
-      year,
-      date: date.toISOString(),
-      categories: []
-    };
-    
-    shoppingLists.unshift(newList); // Add to beginning of array
+    await addNewShoppingList(0);
+    await loadShoppingLists();
     listIndex = 0;
   }
   
-  // Group ingredients by category
+  // Categorize ingredients
   const categorizedIngredients = {};
-  
   ingredients.forEach(ingredient => {
-    if (!categorizedIngredients[ingredient.category]) {
-      categorizedIngredients[ingredient.category] = [];
+    const category = ingredient.category || 'Sonstiges';
+    if (!categorizedIngredients[category]) {
+      categorizedIngredients[category] = [];
     }
     
-    // Check if ingredient already exists in this category
-    const existingIngredientIndex = categorizedIngredients[ingredient.category].findIndex(
+    // Generate a truly unique ID using timestamp, random string, and ingredient name
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${ingredient.name.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    // Check for duplicates by name
+    const existingIndex = categorizedIngredients[category].findIndex(
       item => item.name.toLowerCase() === ingredient.name.toLowerCase()
     );
     
-    if (existingIngredientIndex !== -1) {
-      // Combine amounts if possible
-      const existingAmount = categorizedIngredients[ingredient.category][existingIngredientIndex].amount;
-      const newAmount = ingredient.amount;
-      
-      // Simple amount combination (this could be more sophisticated)
-      if (existingAmount.includes('g') && newAmount.includes('g')) {
-        const existingGrams = parseInt(existingAmount);
-        const newGrams = parseInt(newAmount);
-        if (!isNaN(existingGrams) && !isNaN(newGrams)) {
-          categorizedIngredients[ingredient.category][existingIngredientIndex].amount = 
-            `${existingGrams + newGrams}g`;
-        }
-      } else if (existingAmount.includes('ml') && newAmount.includes('ml')) {
-        const existingMl = parseInt(existingAmount);
-        const newMl = parseInt(newAmount);
-        if (!isNaN(existingMl) && !isNaN(newMl)) {
-          categorizedIngredients[ingredient.category][existingIngredientIndex].amount = 
-            `${existingMl + newMl}ml`;
-        }
-      } else if (existingAmount.includes('Stück') && newAmount.includes('Stück')) {
-        const existingCount = parseInt(existingAmount);
-        const newCount = parseInt(newAmount);
-        if (!isNaN(existingCount) && !isNaN(newCount)) {
-          categorizedIngredients[ingredient.category][existingIngredientIndex].amount = 
-            `${existingCount + newCount} Stück`;
-        }
-      } else {
-        // If we can't combine, just keep both
-        categorizedIngredients[ingredient.category].push({
-          ...ingredient,
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-          checked: false
-        });
-      }
-    } else {
-      // Add new ingredient
-      categorizedIngredients[ingredient.category].push({
+    if (existingIndex !== -1) {
+      // Update existing item but keep its original ID
+      categorizedIngredients[category][existingIndex] = {
         ...ingredient,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        id: categorizedIngredients[category][existingIndex].id,
+        checked: false
+      };
+    } else {
+      // Add new item with unique ID
+      categorizedIngredients[category].push({
+        ...ingredient,
+        id: uniqueId,
         checked: false
       });
     }
   });
   
-  // Update or add categories to the shopping list
-  Object.keys(categorizedIngredients).forEach(categoryName => {
-    // Check if category already exists in the list
+  // Update categories in the shopping list
+  Object.entries(categorizedIngredients).forEach(([categoryName, items]) => {
     const categoryIndex = shoppingLists[listIndex].categories.findIndex(
       category => category.category === categoryName
     );
     
     if (categoryIndex !== -1) {
-      // Add items to existing category
-      shoppingLists[listIndex].categories[categoryIndex].items.push(
-        ...categorizedIngredients[categoryName]
-      );
+      // Add new items to existing category
+      const existingItems = shoppingLists[listIndex].categories[categoryIndex].items;
+      items.forEach(newItem => {
+        const existingItemIndex = existingItems.findIndex(
+          item => item.name.toLowerCase() === newItem.name.toLowerCase()
+        );
+        if (existingItemIndex === -1) {
+          existingItems.push(newItem);
+        }
+      });
     } else {
-      // Create new category
+      // Create new category with items
       shoppingLists[listIndex].categories.push({
         category: categoryName,
-        items: categorizedIngredients[categoryName]
+        items: items
       });
     }
   });
-  
-  // Sort categories alphabetically
-  shoppingLists[listIndex].categories.sort((a, b) => 
-    a.category.localeCompare(b.category)
-  );
-  
+
+  await saveShoppingLists();
   return shoppingLists[listIndex];
+};
+
+// Toggle item check status
+export const toggleItemCheck = async (listId, categoryName, itemId) => {
+  await loadShoppingLists();
+  
+  const listIndex = shoppingLists.findIndex(list => list.id === listId);
+  if (listIndex !== -1) {
+    const categoryIndex = shoppingLists[listIndex].categories.findIndex(
+      category => category.category === categoryName
+    );
+    
+    if (categoryIndex !== -1) {
+      const itemIndex = shoppingLists[listIndex].categories[categoryIndex].items.findIndex(
+        item => item.id === itemId
+      );
+      
+      if (itemIndex !== -1) {
+        shoppingLists[listIndex].categories[categoryIndex].items[itemIndex].checked = 
+          !shoppingLists[listIndex].categories[categoryIndex].items[itemIndex].checked;
+        
+        await saveShoppingLists();
+      }
+    }
+  }
+};
+
+// Delete all items from a list
+export const deleteAllItems = async (listId) => {
+  await loadShoppingLists();
+  
+  const listIndex = shoppingLists.findIndex(list => list.id === listId);
+  if (listIndex !== -1) {
+    // Reset categories to empty array but maintain the list structure
+    shoppingLists[listIndex] = {
+      ...shoppingLists[listIndex],
+      categories: []
+    };
+    await saveShoppingLists();
+  }
+};
+
+// Delete individual item from a list
+export const deleteItem = async (listId, categoryName, itemId) => {
+  await loadShoppingLists();
+  
+  const listIndex = shoppingLists.findIndex(list => list.id === listId);
+  if (listIndex !== -1) {
+    const categoryIndex = shoppingLists[listIndex].categories.findIndex(
+      category => category.category === categoryName
+    );
+    
+    if (categoryIndex !== -1) {
+      // Remove the item
+      shoppingLists[listIndex].categories[categoryIndex].items = 
+        shoppingLists[listIndex].categories[categoryIndex].items.filter(
+          item => item.id !== itemId
+        );
+      
+      // If category is empty after deletion, remove the category
+      if (shoppingLists[listIndex].categories[categoryIndex].items.length === 0) {
+        shoppingLists[listIndex].categories = shoppingLists[listIndex].categories.filter(
+          (_, index) => index !== categoryIndex
+        );
+      }
+      
+      await saveShoppingLists();
+    }
+  }
 };
 
 // Get available weeks for selection

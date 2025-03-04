@@ -1,4 +1,6 @@
-// Week plan manager utility
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const WEEK_PLANS_KEY = 'week_plans';
 
 // Format date as "DD.MM.YYYY"
 const formatDate = (date) => {
@@ -32,52 +34,31 @@ const getWeekRange = (date) => {
   };
 };
 
-// Mock data for recipes
-const RECIPES = [
-  {
-    id: '1',
-    title: 'Cremige Pasta mit Pilzen',
-    image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?q=80&w=500',
-    time: '25 min',
-    rating: 4.8,
-    tags: ['Vegetarisch', 'Italienisch'],
-  },
-  {
-    id: '2',
-    title: 'Mediterraner Quinoa-Salat',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=500',
-    time: '15 min',
-    rating: 4.5,
-    tags: ['Vegan', 'Salat'],
-  },
-  {
-    id: '3',
-    title: 'Hähnchen-Curry mit Reis',
-    image: 'https://images.unsplash.com/photo-1604152135912-04a022e23696?q=80&w=500',
-    time: '35 min',
-    rating: 4.7,
-    tags: ['Asiatisch', 'Scharf'],
-  },
-  {
-    id: '4',
-    title: 'Avocado-Toast mit Ei',
-    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=500',
-    time: '10 min',
-    rating: 4.3,
-    tags: ['Frühstück', 'Schnell'],
-  },
-  {
-    id: '5',
-    title: 'Griechischer Bauernsalat',
-    image: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?q=80&w=500',
-    time: '15 min',
-    rating: 4.6,
-    tags: ['Vegetarisch', 'Salat'],
-  },
-];
-
-// Mock storage for week plans
+// Initialize week plans array
 let weekPlans = [];
+
+// Load week plans from storage
+export const loadWeekPlans = async () => {
+  try {
+    const storedPlans = await AsyncStorage.getItem(WEEK_PLANS_KEY);
+    if (storedPlans) {
+      weekPlans = JSON.parse(storedPlans);
+    }
+    return weekPlans;
+  } catch (error) {
+    console.error('Error loading week plans:', error);
+    return [];
+  }
+};
+
+// Save week plans to storage
+const saveWeekPlans = async () => {
+  try {
+    await AsyncStorage.setItem(WEEK_PLANS_KEY, JSON.stringify(weekPlans));
+  } catch (error) {
+    console.error('Error saving week plans:', error);
+  }
+};
 
 // Get all week plans
 export const getWeekPlans = () => {
@@ -85,7 +66,7 @@ export const getWeekPlans = () => {
 };
 
 // Add a new week plan for a specific week
-export const addNewWeekPlan = (weeksAhead = 0) => {
+export const addNewWeekPlan = async (weeksAhead = 0) => {
   const today = new Date();
   const targetDate = new Date(today);
   targetDate.setDate(today.getDate() + (weeksAhead * 7));
@@ -94,17 +75,14 @@ export const addNewWeekPlan = (weeksAhead = 0) => {
   const year = targetDate.getFullYear();
   const weekRange = getWeekRange(targetDate);
   
-  // Check if a plan for this week already exists
   const existingPlanIndex = weekPlans.findIndex(
     plan => plan.weekNumber === weekNumber && plan.year === year
   );
   
-  // If plan already exists, return it
   if (existingPlanIndex !== -1) {
     return weekPlans[existingPlanIndex];
   }
   
-  // Create new plan with days of the week
   const newPlan = {
     id: `week-${weekNumber}-${year}`,
     name: `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
@@ -122,8 +100,8 @@ export const addNewWeekPlan = (weeksAhead = 0) => {
     }
   };
   
-  // Add to beginning of array
   weekPlans.unshift(newPlan);
+  await saveWeekPlans();
   
   return newPlan;
 };
@@ -170,17 +148,14 @@ export const deleteRecipe = (weekId, day, recipeId) => {
 };
 
 // Add recipes to a week plan
-export const addRecipesToWeekPlan = (weekId, recipes) => {
+export const addRecipesToWeekPlan = async (weekId, recipes) => {
   const weekIndex = weekPlans.findIndex(plan => plan.id === weekId);
   
   if (weekIndex === -1) return false;
   
-  // Simple distribution algorithm - just for demonstration
   const days = Object.keys(weekPlans[weekIndex].days);
-  
   let recipeIndex = 0;
   
-  // Distribute recipes across the week
   for (const day of days) {
     if (recipeIndex < recipes.length) {
       weekPlans[weekIndex].days[day].push(recipes[recipeIndex]);
@@ -188,13 +163,9 @@ export const addRecipesToWeekPlan = (weekId, recipes) => {
     }
   }
   
+  await saveWeekPlans();
   return true;
 };
 
-// Initialize with empty data (no sample data on first launch)
-const initializeWithEmptyData = () => {
-  weekPlans = [];
-};
-
-// Initialize with empty data instead of sample data
-initializeWithEmptyData();
+// Initialize by loading saved data
+loadWeekPlans();

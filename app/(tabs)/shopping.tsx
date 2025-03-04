@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, Alert, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Plus, Share2, ShoppingBag, Trash2, ChevronDown, ChevronRight, Calendar, X } from 'lucide-react-native';
 import PlatformIcon from '../../components/PlatformIcon';
-import { getShoppingLists, addNewShoppingList } from '../../utils/shoppingListManager';
+import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '../../utils/shoppingListManager';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ShoppingScreen() {
   const [shoppingLists, setShoppingLists] = useState([]);
@@ -12,72 +13,40 @@ export default function ShoppingScreen() {
   const [expandedList, setExpandedList] = useState(null);
   const [weekSelectorVisible, setWeekSelectorVisible] = useState(false);
   
-  useEffect(() => {
-    // Load shopping lists when component mounts
-    const lists = getShoppingLists();
+  useFocusEffect(
+    useCallback(() => {
+      loadShoppingLists();
+    }, [])
+  );
+
+  const loadShoppingLists = async () => {
+    const lists = await getShoppingLists();
     setShoppingLists(lists);
     
     // If there's a current week list, expand it by default
     if (lists.length > 0) {
       setExpandedList(lists[0].id);
     }
-  }, []);
-
-  const toggleItemCheck = (listId, categoryName, itemId) => {
-    const updatedLists = [...shoppingLists];
-    const listIndex = updatedLists.findIndex(list => list.id === listId);
-    
-    if (listIndex !== -1) {
-      const categoryIndex = updatedLists[listIndex].categories.findIndex(
-        category => category.category === categoryName
-      );
-      
-      if (categoryIndex !== -1) {
-        const itemIndex = updatedLists[listIndex].categories[categoryIndex].items.findIndex(
-          item => item.id === itemId
-        );
-        
-        if (itemIndex !== -1) {
-          updatedLists[listIndex].categories[categoryIndex].items[itemIndex].checked = 
-            !updatedLists[listIndex].categories[categoryIndex].items[itemIndex].checked;
-          
-          setShoppingLists(updatedLists);
-        }
-      }
-    }
   };
 
-  const addNewItem = () => {
+  const handleToggleItemCheck = async (listId, categoryName, itemId) => {
+    await toggleItemCheck(listId, categoryName, itemId);
+    // Reload lists to get updated state
+    await loadShoppingLists(); // Reload the lists after toggling
+  };
+
+  const addNewItem = async () => {
     if (newItem.trim() === '' || !expandedList) return;
     
-    const updatedLists = [...shoppingLists];
-    const listIndex = updatedLists.findIndex(list => list.id === expandedList);
+    const ingredient = {
+      name: newItem,
+      amount: '',
+      category: 'Sonstiges'
+    };
     
-    if (listIndex !== -1) {
-      // Add to "Sonstiges" category for simplicity
-      let sonstigesIndex = updatedLists[listIndex].categories.findIndex(
-        category => category.category === 'Sonstiges'
-      );
-      
-      // Create Sonstiges category if it doesn't exist
-      if (sonstigesIndex === -1) {
-        updatedLists[listIndex].categories.push({
-          category: 'Sonstiges',
-          items: []
-        });
-        sonstigesIndex = updatedLists[listIndex].categories.length - 1;
-      }
-      
-      updatedLists[listIndex].categories[sonstigesIndex].items.push({
-        id: Date.now().toString(),
-        name: newItem,
-        amount: '',
-        checked: false
-      });
-      
-      setShoppingLists(updatedLists);
-      setNewItem('');
-    }
+    await addToShoppingList([ingredient]);
+    await loadShoppingLists(); // Reload the lists after adding
+    setNewItem('');
   };
 
   const toggleListExpansion = (listId) => {
@@ -92,7 +61,7 @@ export default function ShoppingScreen() {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
       if (window.confirm('Wirklich alles löschen?')) {
-        deleteAllItems(listId);
+        handleDeleteAllItems(listId);
       }
     } else {
       Alert.alert(
@@ -105,7 +74,7 @@ export default function ShoppingScreen() {
           },
           {
             text: 'Löschen',
-            onPress: () => deleteAllItems(listId),
+            onPress: () => handleDeleteAllItems(listId),
             style: 'destructive'
           }
         ]
@@ -113,23 +82,9 @@ export default function ShoppingScreen() {
     }
   };
 
-  const deleteAllItems = (listId) => {
-    const updatedLists = [...shoppingLists];
-    const listIndex = updatedLists.findIndex(list => list.id === listId);
-    
-    if (listIndex !== -1) {
-      // Clear all items from all categories
-      updatedLists[listIndex].categories.forEach(category => {
-        category.items = [];
-      });
-      
-      // Remove empty categories
-      updatedLists[listIndex].categories = updatedLists[listIndex].categories.filter(
-        category => category.items.length > 0
-      );
-      
-      setShoppingLists(updatedLists);
-    }
+  const handleDeleteAllItems = async (listId) => {
+    await deleteAllItems(listId);
+    await loadShoppingLists(); // Reload the lists after deletion
   };
   
   const createNewWeek = (weeksAhead) => {
@@ -137,6 +92,35 @@ export default function ShoppingScreen() {
     setShoppingLists([newList, ...shoppingLists]);
     setExpandedList(newList.id);
     setWeekSelectorVisible(false);
+  };
+
+  const handleDeleteItem = async (listId, categoryName, itemId) => {
+    // Show confirmation dialog
+    if (Platform.OS === 'web') {
+      if (window.confirm('Artikel wirklich löschen?')) {
+        await deleteItem(listId, categoryName, itemId);
+        await loadShoppingLists();
+      }
+    } else {
+      Alert.alert(
+        'Artikel löschen',
+        'Artikel wirklich löschen?',
+        [
+          {
+            text: 'Abbrechen',
+            style: 'cancel'
+          },
+          {
+            text: 'Löschen',
+            onPress: async () => {
+              await deleteItem(listId, categoryName, itemId);
+              await loadShoppingLists();
+            },
+            style: 'destructive'
+          }
+        ]
+      );
+    }
   };
 
   const renderShoppingList = (list) => {
@@ -203,7 +187,7 @@ export default function ShoppingScreen() {
                     <TouchableOpacity
                       key={item.id}
                       style={styles.itemRow}
-                      onPress={() => toggleItemCheck(list.id, category.category, item.id)}
+                      onPress={() => handleToggleItemCheck(list.id, category.category, item.id)}
                     >
                       <View style={styles.checkboxContainer}>
                         <View style={[
@@ -226,7 +210,10 @@ export default function ShoppingScreen() {
                         )}
                       </View>
                       
-                      <TouchableOpacity style={styles.deleteButton}>
+                      <TouchableOpacity 
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteItem(list.id, category.category, item.id)}
+                      >
                         <PlatformIcon icon={Trash2} size={16} color="#CCC" />
                       </TouchableOpacity>
                     </TouchableOpacity>
