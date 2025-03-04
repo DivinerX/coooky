@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { analyzeUserPreferences } from './openAiService';
 
 const USER_PREFERENCES_KEY = 'user_food_preferences';
 
@@ -12,7 +13,17 @@ export const UserPreferenceTypes = {
 export const loadUserPreferences = async () => {
   try {
     const stored = await AsyncStorage.getItem(USER_PREFERENCES_KEY);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    
+    const prefs = JSON.parse(stored);
+    // Check if preferences are actually empty
+    if (!prefs.habits.length && 
+        !prefs.favorites.length && 
+        !prefs.allergies.length && 
+        !prefs.trends.length) {
+      return null;
+    }
+    return prefs;
   } catch (error) {
     console.error('Error loading user preferences:', error);
     return null;
@@ -21,7 +32,15 @@ export const loadUserPreferences = async () => {
 
 export const saveUserPreferences = async (preferences) => {
   try {
-    await AsyncStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(preferences));
+    // Ensure we have valid preference object structure
+    const validPreferences = {
+      habits: preferences.habits || [],
+      favorites: preferences.favorites || [],
+      allergies: preferences.allergies || [],
+      trends: preferences.trends || []
+    };
+    
+    await AsyncStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(validPreferences));
     return true;
   } catch (error) {
     console.error('Error saving user preferences:', error);
@@ -31,7 +50,7 @@ export const saveUserPreferences = async (preferences) => {
 
 export const updateUserPreferences = async (newPreferences) => {
   try {
-    const current = await loadUserPreferences() || {};
+    const current = await loadUserPreferences();
     const updated = { ...current, ...newPreferences };
     await saveUserPreferences(updated);
     return true;
@@ -41,32 +60,18 @@ export const updateUserPreferences = async (newPreferences) => {
   }
 };
 
-export const analyzeUserInput = (input) => {
-  // Analyze user input text to extract preferences
-  const preferences = {
-    habits: [],
-    favorites: [],
-    allergies: [],
-    trends: []
-  };
-
-  const lowerInput = input.toLowerCase();
-
-  // Check for dietary habits
-  if (lowerInput.includes('vegetar')) preferences.habits.push('vegetarian');
-  if (lowerInput.includes('vegan')) preferences.habits.push('vegan');
-  
-  // Check for cuisine trends
-  if (lowerInput.includes('asiat')) preferences.trends.push('asian');
-  if (lowerInput.includes('italien')) preferences.trends.push('italian');
-  if (lowerInput.includes('mexikan')) preferences.trends.push('mexican');
-  
-  // Check for allergies
-  if (lowerInput.includes('allergi')) {
-    if (lowerInput.includes('nuss')) preferences.allergies.push('nuts');
-    if (lowerInput.includes('gluten')) preferences.allergies.push('gluten');
-    if (lowerInput.includes('laktose')) preferences.allergies.push('lactose');
+export const analyzeUserInput = async (input) => {
+  try {
+    const preferences = await analyzeUserPreferences(input);
+    return preferences;
+  } catch (error) {
+    console.error('Error analyzing user input:', error);
+    // Return empty preferences as fallback
+    return {
+      habits: [],
+      favorites: [],
+      allergies: [],
+      trends: []
+    };
   }
-
-  return preferences;
 };

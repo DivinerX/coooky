@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Bell, Heart, CircleAlert as AlertCircle, CircleHelp as HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
+import PreferencesScreen from '../../components/preferences';
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [voiceGuide, setVoiceGuide] = useState(true);
+  const [preferencesVisible, setPreferencesVisible] = useState(false);
+
+  const openPreferences = () => {
+    setPreferencesVisible(true);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,21 +50,17 @@ export default function SettingsScreen() {
             />
           </View>
           
-          <View style={styles.settingItem}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={openPreferences}
+          >
             <View style={styles.settingInfo}>
               <Heart size={20} color="#666" style={styles.settingIcon} />
               <Text style={styles.settingText}>Ernährungspräferenzen</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
-          </View>
+          </TouchableOpacity>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <AlertCircle size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Allergien & Unverträglichkeiten</Text>
-            </View>
-            <ChevronRight size={20} color="#CCC" />
-          </View>
         </View>
 
         <View style={styles.section}>
@@ -139,6 +141,15 @@ export default function SettingsScreen() {
 
         <Text style={styles.versionText}>Version 1.0.0</Text>
       </ScrollView>
+
+      <Modal
+        visible={preferencesVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setPreferencesVisible(false)}
+      >
+        <PreferencesScreen onClose={() => setPreferencesVisible(false)} />
+      </Modal>
     </SafeAreaView>
   );
 }

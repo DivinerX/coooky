@@ -3,11 +3,10 @@ export interface Message {
   text: string;
   isUser: boolean;
   isGenerating?: boolean;
+  isLoading?: boolean;
   showSurpriseMe?: boolean;
   recipeCountOptions?: boolean;
   servingsOptions?: boolean;
-  showAddToShoppingListButton?: boolean;
-  showShoppingListNavigateButton?: boolean;
   progressStage?: string;
   progressPercent?: number;
 }
@@ -18,6 +17,7 @@ export interface Recipe {
   image: string;
   time: string;
   servings: number;
+  ingredients: any[];
 }
 
 export interface ShoppingListItem {

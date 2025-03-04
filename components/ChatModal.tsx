@@ -3,6 +3,7 @@ import { Mic, Send, X, ShoppingCart, ChevronRight } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { Message } from '@/types';
 import { AnimatedGeneratingMessage } from './AnimatedGeneratingMessage';
+import { useState } from 'react';
 
 interface IChatModalProps {
   isGeneratingRecipes: boolean;
@@ -20,7 +21,7 @@ interface IChatModalProps {
   handleRecipeCountOption: (count: number) => void;
   handleServingsOption: (servings: number | 'custom') => void;
   generatedRecipes: any[];
-  addToShoppingList: () => void;
+  addToShoppingList: () => Promise<void>;
   navigateToShoppingList: () => void;
   startCookingRecipe: (recipe: any) => void;
   scrollViewRef: any;
@@ -49,14 +50,28 @@ export const ChatModal = ({
   scrollViewRef,
   addToWeekPlan,
 }: IChatModalProps) => {
+  const [showNavigateToShoppingList, setShowNavigateToShoppingList] = useState(false);
+
+  const handleAddToShoppingList = async () => {
+    try {
+      await addToShoppingList();
+      setShowNavigateToShoppingList(true);
+    } catch (error) {
+      Alert.alert(
+        "Fehler",
+        "Zutaten konnten nicht zur Einkaufsliste hinzugefügt werden"
+      );
+    }
+  };
+
   const ProgressIndicator = ({ stage, progress }: { stage: string, progress: number }) => (
     <View style={styles.progressContainer}>
       <View style={styles.progressBar}>
-        <View 
+        <View
           style={[
-            styles.progressFill, 
+            styles.progressFill,
             { width: `${progress}%` }
-          ]} 
+          ]}
         />
       </View>
     </View>
@@ -104,9 +119,9 @@ export const ChatModal = ({
                     <View style={styles.generatingContainer}>
                       {message.progressStage && (
                         <>
-                          <ProgressIndicator 
-                            stage={message.progressStage} 
-                            progress={message.progressPercent || 0} 
+                          <ProgressIndicator
+                            stage={message.progressStage}
+                            progress={message.progressPercent || 0}
                           />
                           <AnimatedGeneratingMessage
                             message={message.progressStage}
@@ -168,27 +183,6 @@ export const ChatModal = ({
                     </TouchableOpacity>
                   </View>
                 )}
-
-                {/* Add to shopping list button */}
-                {!message.isUser && message.showAddToShoppingListButton && (
-                  <TouchableOpacity
-                    style={styles.shoppingListButton}
-                    onPress={addToShoppingList}
-                  >
-                    <Text style={styles.shoppingListButtonText}>Zutaten zur Einkaufsliste hinzufügen</Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Navigate to shopping list button */}
-                {!message.isUser && message.showShoppingListNavigateButton && (
-                  <TouchableOpacity
-                    style={styles.shoppingListButton}
-                    onPress={navigateToShoppingList}
-                  >
-                    <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
-                    <Text style={styles.shoppingListButtonText}>Zur Einkaufsliste</Text>
-                  </TouchableOpacity>
-                )}
               </View>
             ))}
 
@@ -218,13 +212,11 @@ export const ChatModal = ({
                   onPress={async () => {
                     try {
                       await addToWeekPlan();
-                      // Optional: Show success feedback
                       Alert.alert(
                         "Erfolg",
                         "Rezepte wurden zum Wochenplan hinzugefügt"
                       );
                     } catch (error) {
-                      // Handle error
                       Alert.alert(
                         "Fehler",
                         "Rezepte konnten nicht zum Wochenplan hinzugefügt werden"
@@ -236,6 +228,26 @@ export const ChatModal = ({
                     Zum Wochenplan hinzufügen
                   </Text>
                 </TouchableOpacity>
+
+                {
+                  showNavigateToShoppingList ? (
+                    <TouchableOpacity
+                      style={styles.shoppingListButton}
+                      onPress={navigateToShoppingList}
+                    >
+                      <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
+                      <Text style={styles.shoppingListButtonText}>Zur Einkaufsliste</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.shoppingListButton}
+                      onPress={handleAddToShoppingList}
+                    >
+                      <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
+                      <Text style={styles.shoppingListButtonText}>Zutaten zur Einkaufsliste hinzufügen</Text>
+                    </TouchableOpacity>
+                  )
+                }
               </View>
             )}
           </ScrollView>
@@ -384,7 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -503,14 +515,24 @@ const styles = StyleSheet.create({
   },
   addToWeekPlanButton: {
     backgroundColor: '#FF6B35',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 20,
+    marginBottom: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   addToWeekPlanButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

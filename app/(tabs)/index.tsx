@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, Image, FlatList, Animated, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Mic, Send, X, Calendar, ShoppingCart, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { Mic, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Platform } from 'react-native';
 import { addToShoppingList as addItemsToShoppingList } from '../../utils/shoppingListManager';
 import { checkIfCookingRelated, generateCookingSuggestions } from '../../utils/openAiService';
 import { setCurrentRecipe } from '../../utils/recipeManager';
 import { Message, Recipe, ShoppingListItem } from '../../types';
 import { ChatModal } from '@/components/ChatModal';
 import { addRecipesToWeekPlan, addNewWeekPlan, getWeekPlans } from '@/utils/weekPlanManager';
+import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
 
 // Define cuisine categories
 const CUISINE_CATEGORIES = [
@@ -32,14 +32,9 @@ export default function MainScreen() {
   const [userPreferences, setUserPreferences] = useState<string | null>(null);
   const [selectedRecipeCount, setSelectedRecipeCount] = useState<number | null>(null);
   const [selectedServings, setSelectedServings] = useState<number | null>(null);
-  const [showShoppingListButton, setShowShoppingListButton] = useState(false);
   const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[]>([]);
-  const [shoppingListItems, setShoppingListItems] = useState<ShoppingListItem[]>([]);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState<boolean>(false);
-  const [generationProgress, setGenerationProgress] = useState<{
-    stage: string;
-    progress: number;
-  }>({ stage: '', progress: 0 });
+  const [conversationStage, setConversationStage] = useState<'initial' | 'preferences' | 'recipe_request' | 'recipe_count' | 'servings' | 'generating'>('initial');
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
@@ -53,25 +48,30 @@ export default function MainScreen() {
     }
   }, [messages]);
 
-  const openChatModal = (isWeekly: boolean) => {
+  const openChatModal = async (isWeekly: boolean) => {
     setIsWeeklyPlanning(isWeekly);
     setChatModalVisible(true);
-
-    // Reset state variables
-    setUserPreferences('');
+    
+    // Reset all states
     setSelectedRecipeCount(null);
     setSelectedServings(null);
-    setShowShoppingListButton(false);
     setGeneratedRecipes([]);
-
-    // Set initial message based on planning type
+    setUserPreferences(null);
+    
+    // Check if user preferences exist
+    const userPrefs = await loadUserPreferences();
+    
+    // Set the initial conversation stage
+    setConversationStage(userPrefs ? 'recipe_request' : 'initial');
+    
+    // Set initial message
     const initialMessage: Message = {
       id: Date.now().toString(),
-      text: isWeekly
-        ? "Was wollen wir diese Woche kochen? Worauf hast Du Lust?"
-        : "Worauf hast Du Hunger? Was wollen wir kochen?",
+      text: !userPrefs ? 
+        "Bevor wir anfangen: Hast du bestimmte Ernährungsgewohnheiten oder Allergien, die ich berücksichtigen soll?" :
+        "Worauf hast Du Hunger? Was wollen wir kochen?",
       isUser: false,
-      showSurpriseMe: isWeekly // Show "Überrasch mich" option for weekly planning
+      showSurpriseMe: userPrefs !== null // Remove isWeeklyPlanning condition
     };
 
     setMessages([initialMessage]);
@@ -102,94 +102,107 @@ export default function MainScreen() {
   };
 
   const processUserMessage = async (message: string) => {
-    // If we're currently generating recipes, don't process new messages
     if (isGeneratingRecipes) return;
 
-    // Only check if cooking-related for the initial message
-    if (!userPreferences) {
-      try {
-        const topicCheck = await checkIfCookingRelated(message);
-        if (!topicCheck.isCookingRelated) {
-          const aiResponse = {
-            id: Date.now().toString(),
-            text: topicCheck.message || "Entschuldigung, ich kann nur Fragen zum Kochen und Rezepten beantworten. Bitte stelle mir eine koch-bezogene Frage.",
-            isUser: false
-          };
-          setMessages(prev => [...prev, aiResponse]);
-          // Reset any existing preferences or selections
-          setUserPreferences(null);
-          setSelectedRecipeCount(null);
-          setSelectedServings(null);
-          return;
+    // First check if we have user preferences
+    const existingPrefs = await loadUserPreferences();
+
+    switch (conversationStage) {
+      case 'initial':
+        if (!existingPrefs) {
+          try {
+            // Add a loading message
+            const loadingMessage: Message = {
+              id: Date.now().toString(),
+              text: "Ich analysiere deine Vorlieben...",
+              isUser: false,
+              isLoading: true
+            };
+            setMessages(prev => [...prev, loadingMessage]);
+
+            // Analyze and save the initial preferences
+            const preferences = await analyzeUserInput(message);
+            await saveUserPreferences(preferences);
+            
+            // Remove loading message and move to recipe request stage
+            setMessages(prev => prev.filter(msg => !msg.isLoading));
+            setConversationStage('recipe_request');
+            
+            // Confirm preferences were saved
+            const confirmMessage: Message = {
+              id: Date.now().toString(),
+              text: `Ich habe deine Vorlieben gespeichert. ${
+                preferences.allergies.length ? 
+                `Ich werde besonders auf diese Allergien achten: ${preferences.allergies.join(', ')}. ` : 
+                ''
+              }Was möchtest du kochen?`,
+              isUser: false
+            };
+            setMessages(prev => [...prev, confirmMessage]);
+          } catch (error) {
+            console.error('Error processing preferences:', error);
+            const errorMessage: Message = {
+              id: Date.now().toString(),
+              text: "Entschuldigung, ich konnte deine Vorlieben nicht richtig verarbeiten. Kannst du sie bitte noch einmal anders formulieren?",
+              isUser: false
+            };
+            setMessages(prev => prev.filter(msg => !msg.isLoading).concat(errorMessage));
+          }
         }
-        
+        break;
+
+      case 'recipe_request':
+        // Save the recipe request and move to count selection
         setUserPreferences(message);
-        setTimeout(() => {
-          const aiResponse = {
+        setConversationStage('recipe_count');
+        const countPrompt: Message = {
+          id: Date.now().toString(),
+          text: "Wie viele Rezepte möchtest du?",
+          isUser: false,
+          recipeCountOptions: true
+        };
+        setMessages(prev => [...prev, countPrompt]);
+        break;
+
+      case 'recipe_count':
+        const count = parseRecipeCount(message);
+        if (count) {
+          setSelectedRecipeCount(count);
+          setConversationStage('servings');
+          const servingsPrompt: Message = {
             id: Date.now().toString(),
-            text: `Super, wie viele Rezepte möchtest du?`,
+            text: "Wieviel Portionen soll ich pro Rezept planen?",
+            isUser: false,
+            servingsOptions: true
+          };
+          setMessages(prev => [...prev, servingsPrompt]);
+        } else {
+          const retryPrompt: Message = {
+            id: Date.now().toString(),
+            text: "Bitte wähle, wie viele Rezepte ich erstellen soll (2-5):",
             isUser: false,
             recipeCountOptions: true
           };
-          setMessages(prev => [...prev, aiResponse]);
-        }, 500);
-        return;
-      } catch (error) {
-        console.error('Error checking if cooking-related:', error);
-        return;
-      }
-    }
-
-    // Only proceed with these steps if we already have confirmed cooking-related content
-    if (userPreferences) {
-      if (!selectedRecipeCount) {
-        const count = parseRecipeCount(message);
-        if (count) {
-          handleRecipeCountSelection(count);
-        } else {
-          setTimeout(() => {
-            const aiResponse = {
-              id: Date.now().toString(),
-              text: "Bitte wähle, wie viele Rezepte ich erstellen soll (2-5):",
-              isUser: false,
-              recipeCountOptions: true
-            };
-            setMessages(prev => [...prev, aiResponse]);
-          }, 500);
+          setMessages(prev => [...prev, retryPrompt]);
         }
-        return;
-      }
+        break;
 
-      if (!selectedServings) {
+      case 'servings':
         const servings = parseServings(message);
         if (servings) {
-          handleServingsSelection(servings);
+          setSelectedServings(servings);
+          setConversationStage('generating');
+          generateRecipesWithAI(userPreferences!, selectedRecipeCount!, servings);
         } else {
-          setTimeout(() => {
-            const aiResponse = {
-              id: Date.now().toString(),
-              text: "Wieviel Portionen soll ich pro Rezept planen?",
-              isUser: false,
-              servingsOptions: true
-            };
-            setMessages(prev => [...prev, aiResponse]);
-          }, 500);
+          const retryPrompt: Message = {
+            id: Date.now().toString(),
+            text: "Wieviel Portionen soll ich pro Rezept planen?",
+            isUser: false,
+            servingsOptions: true
+          };
+          setMessages(prev => [...prev, retryPrompt]);
         }
-        return;
-      }
-    }
-
-    // Handle confirmation or changes if we already have all necessary selections
-    if (userPreferences && selectedRecipeCount && selectedServings && generatedRecipes.length > 0) {
-      setTimeout(() => {
-        const aiResponse = {
-          id: Date.now().toString(),
-          text: "Möchtest du die Zutatenliste zur Einkaufsliste hinzufügen?",
-          isUser: false,
-          showAddToShoppingListButton: true
-        };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 500);
+        break;
     }
   };
 
@@ -297,7 +310,6 @@ export default function MainScreen() {
     const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
     
     const updateProgressMessage = (stage: string, progress: number) => {
-      setGenerationProgress({ stage, progress });
       setMessages(prev => prev.map(msg => {
         if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
           return {
@@ -405,7 +417,6 @@ export default function MainScreen() {
           id: Date.now().toString(),
           text: recipeListText,
           isUser: false,
-          showAddToShoppingListButton: true
         };
         setMessages(prev => [...prev, successResponse]);
       } else {
@@ -458,20 +469,37 @@ export default function MainScreen() {
   };
 
   const addToShoppingList = async () => {
-    // Add the items to the shopping list using the shopping list manager
-    if (shoppingListItems.length > 0) {
-      // Create a current date to add the items to the current week's shopping list
-      const today = new Date();
-      await addItemsToShoppingList(shoppingListItems, today); // Add await here
+    try {
+      if (!generatedRecipes || generatedRecipes.length === 0) return;
+
+      // Extract ingredients from generated recipes
+      const ingredients = generatedRecipes.flatMap(recipe => 
+        recipe.ingredients.map(ingredient => ({
+          name: ingredient.name,
+          amount: ingredient.amount || '',
+          unit: ingredient.unit || '',
+          category: ingredient.category || 'Sonstiges'
+        }))
+      );
+
+      // Add ingredients to shopping list
+      await addItemsToShoppingList(ingredients);
 
       // Show confirmation message
       const confirmationMessage: Message = {
         id: Date.now().toString(),
         text: "Ich habe alle notwendigen Zutaten auf die Einkaufsliste geschrieben.",
         isUser: false,
-        showShoppingListNavigateButton: true
       };
       setMessages(prev => [...prev, confirmationMessage]);
+    } catch (error) {
+      console.error('Error adding to shopping list:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: "Es gab ein Problem beim Hinzufügen der Zutaten zur Einkaufsliste.",
+        isUser: false
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
