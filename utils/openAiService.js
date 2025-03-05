@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import 'react-native-url-polyfill/auto';
 import { loadUserPreferences } from './userPreferencesManager';
-
+import { getLanguage } from './i18n';
 const DEFAULT_API_KEY = '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';
 
 let openai = new OpenAI({
@@ -39,8 +39,10 @@ export const checkIfCookingRelated = async (text) => {
 export const generateCookingSuggestions = async (preferences, recipeCount, portionsPerRecipe) => {
   try {
     const userPrefs = await loadUserPreferences();
+    const language = getLanguage();
+    console.log('language', language);
     
-    let systemPrompt = "You are a professional chef assistant specializing in creating delicious recipes.";
+    let systemPrompt = `You are a professional chef assistant specializing in creating delicious recipes in language ${language.name}.`;
     
     if (userPrefs) {
       systemPrompt += "\nConsider these user preferences:";

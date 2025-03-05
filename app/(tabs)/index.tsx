@@ -10,16 +10,17 @@ import { Message, Recipe, ShoppingListItem } from '../../types';
 import { ChatModal } from '@/components/ChatModal';
 import { addRecipesToWeekPlan, addNewWeekPlan, getWeekPlans } from '@/utils/weekPlanManager';
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
+import i18n from '../../utils/i18n';
 
 // Define cuisine categories
 const CUISINE_CATEGORIES = [
-  { id: 'asian', name: 'Asiatisch', icon: '🍜' },
-  { id: 'italian', name: 'Italienisch', icon: '🍝' },
-  { id: 'mediterranean', name: 'Mediterran', icon: '🥗' },
-  { id: 'german', name: 'Deutsch', icon: '🥨' },
-  { id: 'mexican', name: 'Mexikanisch', icon: '🌮' },
-  { id: 'vegetarian', name: 'Vegetarisch', icon: '🥦' },
-  { id: 'quick', name: 'Schnell & Einfach', icon: '⏱️' }
+  { id: 'asian', name: i18n.t('categories.asian'), icon: '🍜' },
+  { id: 'italian', name: i18n.t('categories.italian'), icon: '🍝' },
+  { id: 'mediterranean', name: i18n.t('categories.mediterranean'), icon: '🥗' },
+  { id: 'german', name: i18n.t('categories.german'), icon: '🥨' },
+  { id: 'mexican', name: i18n.t('categories.mexican'), icon: '🌮' },
+  { id: 'vegetarian', name: i18n.t('categories.vegetarian'), icon: '🥦' },
+  { id: 'quick', name: i18n.t('categories.quick'), icon: '⏱️' }
 ];
 
 export default function MainScreen() {
@@ -68,8 +69,8 @@ export default function MainScreen() {
     const initialMessage: Message = {
       id: Date.now().toString(),
       text: !userPrefs ? 
-        "Bevor wir anfangen: Hast du bestimmte Ernährungsgewohnheiten oder Allergien, die ich berücksichtigen soll?" :
-        "Worauf hast Du Hunger? Was wollen wir kochen?",
+        i18n.t('chat.initialMessage') :
+        i18n.t('chat.recipeRequestMessage'),
       isUser: false,
       showSurpriseMe: userPrefs !== null // Remove isWeeklyPlanning condition
     };
@@ -114,7 +115,7 @@ export default function MainScreen() {
             // Add a loading message
             const loadingMessage: Message = {
               id: Date.now().toString(),
-              text: "Ich analysiere deine Vorlieben...",
+              text: i18n.t('chat.analyzingPreferences'),
               isUser: false,
               isLoading: true
             };
@@ -135,7 +136,7 @@ export default function MainScreen() {
                 preferences.allergies.length ? 
                 `Ich werde besonders auf diese Allergien achten: ${preferences.allergies.join(', ')}. ` : 
                 ''
-              }Was möchtest du kochen?`,
+              }${i18n.t('chat.recipeRequestMessage')}`,
               isUser: false
             };
             setMessages(prev => [...prev, confirmMessage]);
@@ -143,7 +144,7 @@ export default function MainScreen() {
             console.error('Error processing preferences:', error);
             const errorMessage: Message = {
               id: Date.now().toString(),
-              text: "Entschuldigung, ich konnte deine Vorlieben nicht richtig verarbeiten. Kannst du sie bitte noch einmal anders formulieren?",
+              text: i18n.t('chat.errorProcessingPreferences'),
               isUser: false
             };
             setMessages(prev => prev.filter(msg => !msg.isLoading).concat(errorMessage));
@@ -157,7 +158,7 @@ export default function MainScreen() {
         setConversationStage('recipe_count');
         const countPrompt: Message = {
           id: Date.now().toString(),
-          text: "Wie viele Rezepte möchtest du?",
+          text: i18n.t('chat.recipeCountMessage'),
           isUser: false,
           recipeCountOptions: true
         };
@@ -171,7 +172,7 @@ export default function MainScreen() {
           setConversationStage('servings');
           const servingsPrompt: Message = {
             id: Date.now().toString(),
-            text: "Wieviel Portionen soll ich pro Rezept planen?",
+            text: i18n.t('chat.servingsMessage'),
             isUser: false,
             servingsOptions: true
           };
@@ -179,7 +180,7 @@ export default function MainScreen() {
         } else {
           const retryPrompt: Message = {
             id: Date.now().toString(),
-            text: "Bitte wähle, wie viele Rezepte ich erstellen soll (2-5):",
+            text: i18n.t('chat.recipeCountMessage'),
             isUser: false,
             recipeCountOptions: true
           };
@@ -196,7 +197,7 @@ export default function MainScreen() {
         } else {
           const retryPrompt: Message = {
             id: Date.now().toString(),
-            text: "Wieviel Portionen soll ich pro Rezept planen?",
+            text: i18n.t('chat.servingsMessage'),
             isUser: false,
             servingsOptions: true
           };
@@ -217,7 +218,7 @@ export default function MainScreen() {
     // Add user message "Überrasch mich" to chat
     const userMessage = {
       id: Date.now().toString(),
-      text: "Überrasch mich",
+      text: i18n.t('chat.surpriseMe'),
       isUser: true,
     };
 
@@ -227,7 +228,7 @@ export default function MainScreen() {
     setTimeout(() => {
       const cuisineResponse = {
         id: Date.now().toString(),
-        text: `Ich überrasche dich mit ${randomCuisine.icon} ${randomCuisine.name.toLowerCase()} Gerichten! Wie viele Rezepte soll ich dir vorschlagen?`,
+        text: i18n.t('chat.surpriseMeMessage', { cuisine: randomCuisine.name.toLowerCase(), icon: randomCuisine.icon }),
         isUser: false,
         recipeCountOptions: true
       };
@@ -275,7 +276,7 @@ export default function MainScreen() {
     setTimeout(() => {
       const aiResponse: Message = {
         id: Date.now().toString(),
-        text: "Wieviel Portionen soll ich pro Rezept planen?",
+        text: i18n.t('chat.servingsMessage'),
         isUser: false,
         servingsOptions: true
       };
@@ -314,7 +315,7 @@ export default function MainScreen() {
         if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
           return {
             ...msg,
-            text: `Gerne. Ich plane mit ${servings} Portionen pro Rezept und erstelle jetzt ${recipeCount} passende Rezepte für dich...\n\n${stage}`,
+            text: i18n.t('chat.servingMessage', { servings, recipeCount }),
             progressStage: stage,
             progressPercent: progress,
             isGenerating: true
@@ -330,16 +331,16 @@ export default function MainScreen() {
 
       // Progress stages without any emojis or special characters
       const stages = [
-        { message: 'Starte Rezeptsuche...', progress: 5 },
-        { message: 'Durchsuche Kochbücher...', progress: 15 },
-        { message: 'Analysiere Zutaten...', progress: 25 },
-        { message: 'Erstelle Rezeptentwürfe...', progress: 35 },
-        { message: 'Optimiere Zutatenliste...', progress: 45 },
-        { message: 'Verfeinere Gewürze...', progress: 55 },
-        { message: 'Berechne Mengen...', progress: 65 },
-        { message: 'Prüfe Kombinationen...', progress: 75 },
-        { message: 'Finalisiere Rezepte...', progress: 85 },
-        { message: 'Bereite Vorschläge vor...', progress: 95 }
+        { message: i18n.t('chat.progress.startRecipeSearch'), progress: 5 },
+        { message: i18n.t('chat.progress.searchCookbooks'), progress: 15 },
+        { message: i18n.t('chat.progress.analyzeIngredients'), progress: 25 },
+        { message: i18n.t('chat.progress.createRecipeDrafts'), progress: 35 },
+        { message: i18n.t('chat.progress.optimizeIngredientList'), progress: 45 },
+        { message: i18n.t('chat.progress.refineSpices'), progress: 55 },
+        { message: i18n.t('chat.progress.calculateQuantities'), progress: 65 },
+        { message: i18n.t('chat.progress.checkCombinations'), progress: 75 },
+        { message: i18n.t('chat.progress.finalizeRecipes'), progress: 85 },
+        { message: i18n.t('chat.progress.prepareSuggestions'), progress: 95 }
       ];
 
       // Calculate base interval between updates
@@ -389,7 +390,7 @@ export default function MainScreen() {
 
         // Smooth transition to completion
         for (let p = 95; p <= 100; p++) {
-          updateProgressMessage('✨ Serviere die fertigen Rezepte...', p);
+          updateProgressMessage(i18n.t('chat.serveFinishedRecipes'), p);
           await new Promise(resolve => setTimeout(resolve, 50));
         }
 
@@ -399,7 +400,7 @@ export default function MainScreen() {
             return {
               ...msg,
               isGenerating: false,
-              progressStage: '🎉 Fertig! Lass es dir schmecken!',
+              progressStage: i18n.t('chat.finishedRecipes'),
               progressPercent: 100
             };
           }
@@ -407,7 +408,8 @@ export default function MainScreen() {
         }));
 
         // Prepare recipe list text
-        let recipeListText = `Hier sind ${result.recipes.length} Rezepte basierend auf deinen Wünschen:\n\n`;
+        // let recipeListText = `Hier sind ${result.recipes.length} Rezepte basierend auf deinen Wünschen:\n\n`;
+        let recipeListText = i18n.t('chat.generatedRecipesResult', { count: result.recipes.length });
         result.recipes.forEach((recipe: { title: any; time: any; }, index: number) => {
           recipeListText += `${index + 1}. ${recipe.title} (${recipe.time})\n`;
         });
@@ -423,11 +425,12 @@ export default function MainScreen() {
         throw new Error('Keine Rezepte generiert');
       }
     } catch (error: any) {
-      updateProgressMessage('❌ Ups! Die Suppe ist angebrannt...', 0);
+      updateProgressMessage(i18n.t('chat.soupBurnt'), 0);
       console.error('Error generating recipes:', error);
       const errorResponse: Message = {
         id: Date.now().toString(),
-        text: `Es gab ein Problem bei der Generierung der Rezepte: ${error.message || 'Unbekannter Fehler'}. Bitte versuche es später noch einmal.`,
+        // text: `Es gab ein Problem bei der Generierung der Rezepte: ${error.message || 'Unbekannter Fehler'}. Bitte versuche es später noch einmal.`,
+        text: i18n.t('chat.errorGeneratingRecipes', { error: error.message}),
         isUser: false,
       };
       setMessages(prev => [...prev, errorResponse]);
@@ -449,7 +452,7 @@ export default function MainScreen() {
   const handleServingsOption = (servings: number | 'custom'): void => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: servings === 'custom' ? 'anpassen' : `${servings}x`,
+      text: servings === 'custom' ? i18n.t('chat.customize') : `${servings}x`,
       isUser: true,
     };
     setMessages(prev => [...prev, userMessage]);
@@ -458,7 +461,7 @@ export default function MainScreen() {
       setTimeout(() => {
         const aiResponse: Message = {
           id: Date.now().toString(),
-          text: "Bitte gib an, wie viele Portionen du pro Rezept haben möchtest:",
+          text: i18n.t('chat.pleaseSpecifyHowManyPortions'),
           isUser: false,
         };
         setMessages(prev => [...prev, aiResponse]);
@@ -488,7 +491,7 @@ export default function MainScreen() {
       // Show confirmation message
       const confirmationMessage: Message = {
         id: Date.now().toString(),
-        text: "Ich habe alle notwendigen Zutaten auf die Einkaufsliste geschrieben.",
+        text: i18n.t('chat.shoppingListUpdated'),
         isUser: false,
       };
       setMessages(prev => [...prev, confirmationMessage]);
@@ -496,7 +499,7 @@ export default function MainScreen() {
       console.error('Error adding to shopping list:', error);
       const errorMessage: Message = {
         id: Date.now().toString(),
-        text: "Es gab ein Problem beim Hinzufügen der Zutaten zur Einkaufsliste.",
+        text: i18n.t('chat.errorAddingToShoppingList'),
         isUser: false
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -561,7 +564,7 @@ export default function MainScreen() {
       // Add a success message to the chat
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
-        text: 'Die Rezepte wurden erfolgreich zum Wochenplan hinzugefügt.',
+        text: i18n.t('chat.recipesAddedToWeekPlan'),
         isUser: false,
       }]);
 
@@ -574,22 +577,26 @@ export default function MainScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.greeting}>Guten Tag!</Text>
-          <Text style={styles.title}>Was möchtest du heute kochen?</Text>
+          <Text style={styles.greeting}>{i18n.t('common.greeting')}</Text>
+          <Text style={styles.title}>{i18n.t('common.whatToCook')}</Text>
 
           <View style={styles.planningOptions}>
             <TouchableOpacity
               style={styles.planningOption}
               onPress={() => openChatModal(false)}
             >
-              <Text style={styles.planningOptionText}>Einzelnes Rezept</Text>
+              <Text style={styles.planningOptionText}>
+                {i18n.t('common.singleRecipe')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.planningOption, styles.planningOptionSecondary]}
               onPress={() => openChatModal(true)}
             >
-              <Text style={styles.planningOptionText}>Gesamte Woche planen</Text>
+              <Text style={styles.planningOptionText}>
+                {i18n.t('common.weeklyPlanning')}
+              </Text>
               <Calendar size={16} color="#FFF" style={styles.planningOptionIcon} />
             </TouchableOpacity>
           </View>
@@ -599,7 +606,9 @@ export default function MainScreen() {
             onPress={() => openChatModal(false)}
           >
             <View style={styles.chatButtonContent}>
-              <Text style={styles.chatButtonText}>Worauf hast Du Hunger? Was wollen wir kochen?</Text>
+              <Text style={styles.chatButtonText}>
+                {i18n.t('common.whatToCook')}
+              </Text>
               <Mic size={20} color="#FF6B35" />
             </View>
           </TouchableOpacity>

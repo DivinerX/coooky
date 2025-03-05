@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WeekPlan } from '@/types';
 
 const WEEK_PLANS_KEY = 'week_plans';
 
@@ -85,7 +86,7 @@ export const addNewWeekPlan = async (weeksAhead = 0) => {
   
   const newPlan = {
     id: `week-${weekNumber}-${year}`,
-    name: `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
+    name: `${i18n.t('common.week')} ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
     weekNumber,
     year,
     date: targetDate.toISOString(),

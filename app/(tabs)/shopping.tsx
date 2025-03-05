@@ -5,6 +5,7 @@ import { Check, Plus, Share2, ShoppingBag, Trash2, ChevronDown, ChevronRight, Ca
 import PlatformIcon from '../../components/PlatformIcon';
 import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '../../utils/shoppingListManager';
 import { useFocusEffect } from '@react-navigation/native';
+import i18n from '../../utils/i18n';
 
 export default function ShoppingScreen() {
   const [shoppingLists, setShoppingLists] = useState([]);
@@ -21,7 +22,7 @@ export default function ShoppingScreen() {
 
   const loadShoppingLists = async () => {
     const lists = await getShoppingLists();
-    setShoppingLists(lists);
+    setShoppingLists(lists as never[]);
     
     // If there's a current week list, expand it by default
     if (lists.length > 0) {
@@ -29,7 +30,7 @@ export default function ShoppingScreen() {
     }
   };
 
-  const handleToggleItemCheck = async (listId, categoryName, itemId) => {
+  const handleToggleItemCheck = async (listId: string, categoryName: string, itemId: string) => {
     await toggleItemCheck(listId, categoryName, itemId);
     // Reload lists to get updated state
     await loadShoppingLists(); // Reload the lists after toggling
@@ -49,7 +50,7 @@ export default function ShoppingScreen() {
     setNewItem('');
   };
 
-  const toggleListExpansion = (listId) => {
+  const toggleListExpansion = (listId: string) => {
     setExpandedList(expandedList === listId ? null : listId);
   };
 
@@ -57,7 +58,7 @@ export default function ShoppingScreen() {
     setShowChecked(!showChecked);
   };
 
-  const confirmDeleteAll = (listId) => {
+  const confirmDeleteAll = (listId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
       if (window.confirm('Wirklich alles löschen?')) {
@@ -65,15 +66,15 @@ export default function ShoppingScreen() {
       }
     } else {
       Alert.alert(
-        'Einkaufsliste leeren',
-        'Wirklich alles löschen?',
+        i18n.t('shopping.deleteAllConfirmationTitle'),
+        i18n.t('shopping.deleteAllConfirmationMessage'),
         [
           {
-            text: 'Abbrechen',
+            text: i18n.t('shopping.cancel'),
             style: 'cancel'
           },
           {
-            text: 'Löschen',
+            text: i18n.t('shopping.delete'),
             onPress: () => handleDeleteAllItems(listId),
             style: 'destructive'
           }
@@ -82,36 +83,36 @@ export default function ShoppingScreen() {
     }
   };
 
-  const handleDeleteAllItems = async (listId) => {
+  const handleDeleteAllItems = async (listId: string) => {
     await deleteAllItems(listId);
     await loadShoppingLists(); // Reload the lists after deletion
   };
   
-  const createNewWeek = (weeksAhead) => {
-    const newList = addNewShoppingList(weeksAhead);
-    setShoppingLists([newList, ...shoppingLists]);
+  const createNewWeek = async (weeksAhead: number) => {
+    const newList = await addNewShoppingList(weeksAhead);
+    setShoppingLists([newList as never, ...shoppingLists]);
     setExpandedList(newList.id);
     setWeekSelectorVisible(false);
   };
 
-  const handleDeleteItem = async (listId, categoryName, itemId) => {
+  const handleDeleteItem = async (listId: string, categoryName: string, itemId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
-      if (window.confirm('Artikel wirklich löschen?')) {
+      if (window.confirm(i18n.t('shopping.deleteItemConfirmationMessage'))) {
         await deleteItem(listId, categoryName, itemId);
         await loadShoppingLists();
       }
     } else {
       Alert.alert(
-        'Artikel löschen',
-        'Artikel wirklich löschen?',
+        i18n.t('shopping.deleteItemConfirmationTitle'),
+        i18n.t('shopping.deleteItemConfirmationMessage'),
         [
           {
-            text: 'Abbrechen',
+            text: i18n.t('shopping.cancel'),
             style: 'cancel'
           },
           {
-            text: 'Löschen',
+            text: i18n.t('shopping.delete'),
             onPress: async () => {
               await deleteItem(listId, categoryName, itemId);
               await loadShoppingLists();
@@ -123,7 +124,7 @@ export default function ShoppingScreen() {
     }
   };
 
-  const renderShoppingList = (list) => {
+  const renderShoppingList = (list: any) => {
     const isExpanded = expandedList === list.id;
     
     return (
@@ -148,20 +149,20 @@ export default function ShoppingScreen() {
             <View style={styles.listActions}>
               <TouchableOpacity style={styles.actionButton} onPress={toggleShowChecked}>
                 <Text style={styles.actionButtonText}>
-                  {showChecked ? 'Erledigte ausblenden' : 'Erledigte anzeigen'}
+                  {showChecked ? i18n.t('shopping.hideCompleted') : i18n.t('shopping.showCompleted')}
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.shareButton}>
                 <PlatformIcon icon={Share2} size={16} color="#666" />
-                <Text style={styles.shareButtonText}>Teilen</Text>
+                <Text style={styles.shareButtonText}>{i18n.t('shopping.share')}</Text>
               </TouchableOpacity>
             </View>
             
             <View style={styles.addItemContainer}>
               <TextInput
                 style={styles.addItemInput}
-                placeholder="Artikel hinzufügen..."
+                placeholder={i18n.t('shopping.addItemPlaceholder')}
                 value={newItem}
                 onChangeText={setNewItem}
                 onSubmitEditing={addNewItem}
@@ -171,11 +172,11 @@ export default function ShoppingScreen() {
               </TouchableOpacity>
             </View>
             
-            {list.categories.map((category) => {
+            {list.categories.map((category: any) => {
               // Filter out checked items if showChecked is false
               const filteredItems = showChecked 
                 ? category.items 
-                : category.items.filter(item => !item.checked);
+                : category.items.filter((item: any) => !item.checked);
               
               if (filteredItems.length === 0) return null;
               
@@ -183,7 +184,7 @@ export default function ShoppingScreen() {
                 <View key={category.category} style={styles.categoryContainer}>
                   <Text style={styles.categoryTitle}>{category.category}</Text>
                   
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item: any) => (
                     <TouchableOpacity
                       key={item.id}
                       style={styles.itemRow}
@@ -227,7 +228,7 @@ export default function ShoppingScreen() {
               onPress={() => confirmDeleteAll(list.id)}
             >
               <PlatformIcon icon={Trash2} size={18} color="#FFF" style={styles.deleteAllIcon} />
-              <Text style={styles.deleteAllText}>Alles löschen</Text>
+              <Text style={styles.deleteAllText}>{i18n.t('shopping.deleteAll')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -236,7 +237,7 @@ export default function ShoppingScreen() {
             onPress={() => setWeekSelectorVisible(true)}
           >
             <PlatformIcon icon={Plus} size={16} color="#FF6B35" />
-            <Text style={styles.addWeekButtonText}>Woche hinzufügen</Text>
+            <Text style={styles.addWeekButtonText}>{i18n.t('shopping.addWeek')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -246,7 +247,7 @@ export default function ShoppingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Einkaufsliste</Text>
+        <Text style={styles.title}>{i18n.t('shopping.title')}</Text>
         <TouchableOpacity 
           style={styles.addWeekButton}
           onPress={() => setWeekSelectorVisible(true)}
@@ -261,14 +262,14 @@ export default function ShoppingScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              Keine Einkaufslisten vorhanden. Erstelle eine neue Liste oder plane deine Woche.
+              {i18n.t('shopping.noLists')}
             </Text>
             <TouchableOpacity 
               style={styles.addWeekButtonEmpty}
               onPress={() => setWeekSelectorVisible(true)}
             >
               <PlatformIcon icon={Plus} size={16} color="#FFF" />
-              <Text style={styles.addWeekButtonEmptyText}>Woche hinzufügen</Text>
+              <Text style={styles.addWeekButtonEmptyText}>{i18n.t('shopping.addWeek')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -284,48 +285,48 @@ export default function ShoppingScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Woche auswählen</Text>
+              <Text style={styles.modalTitle}>{i18n.t('shopping.selectWeek')}</Text>
               <TouchableOpacity onPress={() => setWeekSelectorVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Neue Woche hinzufügen:</Text>
+            <Text style={styles.modalSubtitle}>{i18n.t('shopping.addNewWeek')}</Text>
             
             <View style={styles.weekOptions}>
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(1)}
               >
-                <Text style={styles.weekOptionText}>Nächste Woche</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('shopping.nextWeek')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(2)}
               >
-                <Text style={styles.weekOptionText}>In 2 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('shopping.twoWeeks')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(3)}
               >
-                <Text style={styles.weekOptionText}>In 3 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('shopping.threeWeeks')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(4)}
               >
-                <Text style={styles.weekOptionText}>In 4 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('shopping.fourWeeks')}</Text>
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Vorhandene Wochen:</Text>
+            <Text style={styles.modalSubtitle}>{i18n.t('shopping.existingWeeks')}</Text>
             
             <ScrollView style={styles.existingWeeks}>
-              {shoppingLists.map((list) => (
+              {shoppingLists.map((list: any) => (
                 <TouchableOpacity 
                   key={list.id}
                   style={[

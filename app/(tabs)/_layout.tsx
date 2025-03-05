@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { Chrome as Home, ChefHat, Calendar, ShoppingCart, Settings } from 'lucide-react-native';
+import { House, ChefHat, Calendar, ShoppingCart, Settings } from 'lucide-react-native';
 import PlatformIcon from '../../components/PlatformIcon';
+import i18n from '../../utils/i18n';
 
 export default function TabLayout() {
   return (
@@ -22,35 +23,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Entdecken',
-          tabBarIcon: ({ color, size }) => <PlatformIcon icon={Home} color={color} size={size} />,
+          title: i18n.t('tabs.discover'),
+          tabBarIcon: ({ color, size }) => <PlatformIcon icon={House} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="cook"
         options={{
-          title: 'Kochen',
+          title: i18n.t('tabs.cook'),
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={ChefHat} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="planner"
         options={{
-          title: 'Wochenplan',
+          title: i18n.t('tabs.planner'),
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={Calendar} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="shopping"
         options={{
-          title: 'Einkaufsliste',
+          title: i18n.t('tabs.shopping'),
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={ShoppingCart} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Einstellungen',
+          title: i18n.t('tabs.settings'),
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={Settings} color={color} size={size} />,
         }}
       />

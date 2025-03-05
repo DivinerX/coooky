@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
+import React from 'react';
 
 declare global {
   interface Window {

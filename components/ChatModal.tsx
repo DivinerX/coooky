@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 import { Message } from '@/types';
 import { AnimatedGeneratingMessage } from './AnimatedGeneratingMessage';
 import { useState } from 'react';
+import i18n from '@/utils/i18n';
+import React from 'react';
 
 interface IChatModalProps {
   isGeneratingRecipes: boolean;
@@ -58,8 +60,8 @@ export const ChatModal = ({
       setShowNavigateToShoppingList(true);
     } catch (error) {
       Alert.alert(
-        "Fehler",
-        "Zutaten konnten nicht zur Einkaufsliste hinzugefügt werden"
+        i18n.t('shopping.error'),
+        i18n.t('shopping.ingredientsNotAdded')
       );
     }
   };
@@ -88,7 +90,7 @@ export const ChatModal = ({
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {isWeeklyPlanning ? 'Wochenplanung' : 'Koch-Assistent'}
+              {isWeeklyPlanning ? i18n.t('chat.weeklyPlanning') : i18n.t('chat.cookingAssistant')}
             </Text>
             <TouchableOpacity onPress={() => setChatModalVisible(false)}>
               <X size={24} color="#333" />
@@ -144,7 +146,7 @@ export const ChatModal = ({
                     style={styles.surpriseMeButton}
                     onPress={handleSurpriseMe}
                   >
-                    <Text style={styles.surpriseMeText}>Überrasch mich</Text>
+                    <Text style={styles.surpriseMeText}>{i18n.t('chat.surpriseMe')}</Text>
                   </TouchableOpacity>
                 )}
 
@@ -179,7 +181,7 @@ export const ChatModal = ({
                       style={styles.optionButton}
                       onPress={() => handleServingsOption('custom')}
                     >
-                      <Text style={styles.optionText}>anpassen</Text>
+                      <Text style={styles.optionText}>{i18n.t('chat.custom')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -189,7 +191,7 @@ export const ChatModal = ({
             {/* Display generated recipes */}
             {generatedRecipes.length > 0 && (
               <View style={styles.generatedRecipesContainer}>
-                <Text style={styles.generatedRecipesTitle}>Generierte Rezepte:</Text>
+                <Text style={styles.generatedRecipesTitle}>{i18n.t('chat.generatedRecipes')}</Text>
 
                 {generatedRecipes.map((recipe: any) => (
                   <TouchableOpacity
@@ -201,7 +203,7 @@ export const ChatModal = ({
                     <View style={styles.recipeCardContent}>
                       <Text style={styles.recipeCardTitle}>{recipe.title}</Text>
                       <Text style={styles.recipeCardTime}>{recipe.time}</Text>
-                      <Text style={styles.recipeCardPortions}>{recipe.servings} Portionen</Text>
+                      <Text style={styles.recipeCardPortions}>{recipe.servings} {i18n.t('chat.portions')}</Text>
                     </View>
                     <ChevronRight size={24} color="#DDD" />
                   </TouchableOpacity>
@@ -213,19 +215,19 @@ export const ChatModal = ({
                     try {
                       await addToWeekPlan();
                       Alert.alert(
-                        "Erfolg",
-                        "Rezepte wurden zum Wochenplan hinzugefügt"
+                        i18n.t('chat.success'),
+                        i18n.t('chat.recipesAddedToWeekPlan')
                       );
                     } catch (error) {
                       Alert.alert(
-                        "Fehler",
-                        "Rezepte konnten nicht zum Wochenplan hinzugefügt werden"
+                        i18n.t('chat.error'),
+                        i18n.t('chat.recipesNotAddedToWeekPlan')
                       );
                     }
                   }}
                 >
                   <Text style={styles.addToWeekPlanButtonText}>
-                    Zum Wochenplan hinzufügen
+                    {i18n.t('chat.addToWeekPlan')}
                   </Text>
                 </TouchableOpacity>
 
@@ -236,7 +238,7 @@ export const ChatModal = ({
                       onPress={navigateToShoppingList}
                     >
                       <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
-                      <Text style={styles.shoppingListButtonText}>Zur Einkaufsliste</Text>
+                      <Text style={styles.shoppingListButtonText}>{i18n.t('chat.shoppingList')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -244,7 +246,7 @@ export const ChatModal = ({
                       onPress={handleAddToShoppingList}
                     >
                       <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
-                      <Text style={styles.shoppingListButtonText}>Zutaten zur Einkaufsliste hinzufügen</Text>
+                      <Text style={styles.shoppingListButtonText}>{i18n.t('chat.addToShoppingList')}</Text>
                     </TouchableOpacity>
                   )
                 }
@@ -255,7 +257,7 @@ export const ChatModal = ({
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.messageInput}
-              placeholder="Schreibe eine Nachricht..."
+              placeholder={i18n.t('chat.writeMessage')}
               value={currentMessage}
               onChangeText={setCurrentMessage}
               onSubmitEditing={handleSendMessage}

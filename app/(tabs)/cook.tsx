@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Minus, Plus, Clock, Calendar, ChevronRight, X } from 'lucide-react-native';
+import { Play, Pause, SkipBack, SkipForward, Minus, Plus, Clock, Calendar, ChevronRight, X } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
 import PlatformIcon from '../../components/PlatformIcon';
 import { getAllRecipes, getCurrentRecipe, getRecipeById, setCurrentRecipe } from '../../utils/recipeManager';
 import { getWeekPlans } from '../../utils/weekPlanManager';
+import i18n from '@/utils/i18n';
 
 export default function CookScreen() {
   const [recipe, setRecipe] = useState(null);
@@ -167,7 +168,7 @@ export default function CookScreen() {
       <View style={styles.recipeListContainer}>
         <View style={styles.recipeListHeader}>
           <PlatformIcon icon={Calendar} size={16} color="#333" style={styles.recipeListHeaderIcon} />
-          <Text style={styles.recipeListHeaderText}>Aus Wochenplan</Text>
+          <Text style={styles.recipeListHeaderText}>{i18n.t('cook.weekPlan')}</Text>
         </View>
         
         {weekPlans.map((weekPlan) => (
@@ -236,7 +237,7 @@ export default function CookScreen() {
       <View style={styles.recipeListContainer}>
         <View style={styles.recipeListHeader}>
           <PlatformIcon icon={ChevronRight} size={16} color="#333" style={styles.recipeListHeaderIcon} />
-          <Text style={styles.recipeListHeaderText}>Alle Rezepte</Text>
+          <Text style={styles.recipeListHeaderText}>{i18n.t('cook.allRecipes')}</Text>
         </View>
         
         <FlatList
@@ -265,12 +266,12 @@ export default function CookScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Bitte wähle ein Rezept aus</Text>
+          <Text style={styles.loadingText}>{i18n.t('cook.pleaseSelectRecipe')}</Text>
           <TouchableOpacity 
             style={styles.selectRecipeButton}
             onPress={() => setRecipeModalVisible(true)}
           >
-            <Text style={styles.selectRecipeButtonText}>Rezept auswählen</Text>
+            <Text style={styles.selectRecipeButtonText}>{i18n.t('cook.selectRecipe')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -284,7 +285,7 @@ export default function CookScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Rezept auswählen</Text>
+                <Text style={styles.modalTitle}>{i18n.t('cook.selectRecipe')}</Text>
                 <TouchableOpacity onPress={() => setRecipeModalVisible(false)}>
                   <PlatformIcon icon={X} size={24} color="#333" />
                 </TouchableOpacity>
@@ -317,7 +318,7 @@ export default function CookScreen() {
         </View>
 
         <View style={styles.servingsContainer}>
-          <Text style={styles.sectionTitle}>Portionen</Text>
+          <Text style={styles.sectionTitle}>{i18n.t('cook.portions')}</Text>
           <View style={styles.servingsControls}>
             <TouchableOpacity style={styles.servingsButton} onPress={decreaseServings}>
               <Minus size={20} color="#FF6B35" />
@@ -331,7 +332,7 @@ export default function CookScreen() {
 
         {recipe.ingredients && recipe.ingredients.length > 0 && (
           <View style={styles.ingredientsContainer}>
-            <Text style={styles.sectionTitle}>Zutaten</Text>
+            <Text style={styles.sectionTitle}>{i18n.t('cook.ingredients')}</Text>
             {recipe.ingredients.map((ingredient) => (
               <View key={ingredient.id} style={styles.ingredientRow}>
                 <Text style={styles.ingredientName}>{ingredient.name}</Text>
@@ -343,9 +344,9 @@ export default function CookScreen() {
 
         {recipe.steps && recipe.steps.length > 0 && (
           <View style={styles.stepsContainer}>
-            <Text style={styles.sectionTitle}>Schritt-für-Schritt Anleitung</Text>
+            <Text style={styles.sectionTitle}>{i18n.t('cook.stepByStepInstructions')}</Text>
             <View style={styles.stepCard}>
-              <Text style={styles.stepNumber}>Schritt {currentStep + 1} von {recipe.steps.length}</Text>
+              <Text style={styles.stepNumber}>{i18n.t('cook.step')} {currentStep + 1} {i18n.t('cook.of')} {recipe.steps.length}</Text>
               <Text style={styles.stepText}>{recipe.steps[currentStep]}</Text>
 
               <View style={styles.stepControls}>
@@ -390,7 +391,7 @@ export default function CookScreen() {
           style={styles.changeRecipeButton}
           onPress={() => setRecipeModalVisible(true)}
         >
-          <Text style={styles.changeRecipeButtonText}>Anderes Rezept auswählen</Text>
+          <Text style={styles.changeRecipeButtonText}>{i18n.t('cook.changeRecipe')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -404,7 +405,7 @@ export default function CookScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Rezept auswählen</Text>
+              <Text style={styles.modalTitle}>{i18n.t('cook.selectRecipe')}</Text>
               <TouchableOpacity onPress={() => setRecipeModalVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>

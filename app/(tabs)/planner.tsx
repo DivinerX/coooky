@@ -4,39 +4,44 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Plus, ChevronRight, Pencil, Trash2, ChevronDown, X, ChevronUp, TriangleAlert as AlertTriangle, ChefHat } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import PlatformIcon from '../../components/PlatformIcon';
-import { getWeekPlans, addNewWeekPlan, moveRecipe, deleteRecipe } from '../../utils/weekPlanManager';
+import { getWeekPlans, addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '../../utils/weekPlanManager';
 import { setCurrentRecipe } from '../../utils/recipeManager';
-
+import i18n from '@/utils/i18n';
+import { Recipe, WeekPlan } from '@/types';
 export default function PlannerScreen() {
   const router = useRouter();
-  const [weekPlans, setWeekPlans] = useState([]);
-  const [expandedWeek, setExpandedWeek] = useState(null);
+  const [weekPlans, setWeekPlans] = useState<WeekPlan[]>([]);
+  const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
   const [weekSelectorVisible, setWeekSelectorVisible] = useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [cookModalVisible, setCookModalVisible] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [targetDay, setTargetDay] = useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [targetDay, setTargetDay] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   
   useEffect(() => {
     // Load week plans when component mounts
-    const plans = getWeekPlans();
-    setWeekPlans(plans);
-    
+    const initWeekPlans = async () => {
+      const plans = await loadWeekPlans();
+      setWeekPlans(plans);
+      
     // If there's a current week plan, expand it by default
     if (plans.length > 0) {
-      setExpandedWeek(plans[0].id);
-    }
+        setExpandedWeek(plans[0].id);
+      }
+    };
+
+    initWeekPlans();
   }, []);
 
-  const toggleWeekExpansion = (weekId) => {
+  const toggleWeekExpansion = (weekId: string) => {
     setExpandedWeek(expandedWeek === weekId ? null : weekId);
   };
 
-  const createNewWeek = (weeksAhead) => {
-    const newPlan = addNewWeekPlan(weeksAhead);
+  const createNewWeek = async (weeksAhead: number) => {
+    const newPlan = await addNewWeekPlan(weeksAhead);
     setWeekPlans([newPlan, ...weekPlans]);
     setExpandedWeek(newPlan.id);
     setWeekSelectorVisible(false);
@@ -69,7 +74,7 @@ export default function PlannerScreen() {
     setMoveModalVisible(false);
   };
 
-  const handleDeleteRecipe = (weekId, day, recipeId) => {
+  const handleDeleteRecipe = (weekId: string, day: string, recipeId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
       if (window.confirm('Rezept wirklich löschen?')) {
@@ -104,19 +109,19 @@ export default function PlannerScreen() {
     }
   };
 
-  const openMoveModal = (day, recipe) => {
+  const openMoveModal = (day: string, recipe: Recipe) => {
     setSelectedDay(day);
     setSelectedRecipe(recipe);
     setMoveModalVisible(true);
   };
 
-  const openEditModal = (day, recipe) => {
+  const openEditModal = (day: string, recipe: Recipe) => {
     setSelectedDay(day);
     setSelectedRecipe(recipe);
     setEditModalVisible(true);
   };
 
-  const openCookModal = (recipe) => {
+  const openCookModal = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setCookModalVisible(true);
   };
@@ -132,7 +137,7 @@ export default function PlannerScreen() {
     }
   };
 
-  const renderRecipeItem = (weekId, day, recipe) => {
+  const renderRecipeItem = (weekId: string, day: string, recipe: Recipe) => {
     if (!recipe) return null;
     
     return (
@@ -177,7 +182,7 @@ export default function PlannerScreen() {
     );
   };
 
-  const renderDayRecipes = (weekId, day) => {
+  const renderDayRecipes = (weekId: string, day: string) => {
     const weekIndex = weekPlans.findIndex(week => week.id === weekId);
     if (weekIndex === -1) return null;
     
@@ -197,14 +202,14 @@ export default function PlannerScreen() {
         ) : (
           <TouchableOpacity style={styles.addMealButton}>
             <Plus size={20} color="#FF6B35" />
-            <Text style={styles.addMealText}>Rezept hinzufügen</Text>
+            <Text style={styles.addMealText}>{i18n.t('plan.addRecipe')}</Text>
           </TouchableOpacity>
         )}
       </View>
     );
   };
 
-  const renderWeekPlan = (weekPlan) => {
+  const renderWeekPlan = (weekPlan: WeekPlan) => {
     const isExpanded = expandedWeek === weekPlan.id;
     
     return (
@@ -231,14 +236,14 @@ export default function PlannerScreen() {
             ))}
             
             <TouchableOpacity style={styles.generateButton}>
-              <Text style={styles.generateButtonText}>KI-Vorschläge generieren</Text>
+              <Text style={styles.generateButtonText}>{i18n.t('plan.generateSuggestions')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.shoppingListButton}
               onPress={() => router.push('/shopping')}
             >
-              <Text style={styles.shoppingListText}>Zur Einkaufsliste</Text>
+              <Text style={styles.shoppingListText}>{i18n.t('plan.shoppingList')}</Text>
               <ChevronRight size={16} color="#FF6B35" />
             </TouchableOpacity>
           </View>
@@ -248,7 +253,7 @@ export default function PlannerScreen() {
             onPress={() => setWeekSelectorVisible(true)}
           >
             <PlatformIcon icon={Plus} size={16} color="#FF6B35" />
-            <Text style={styles.addWeekButtonText}>Woche hinzufügen</Text>
+            <Text style={styles.addWeekButtonText}>{i18n.t('plan.addWeek')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -258,7 +263,7 @@ export default function PlannerScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Wochenplan</Text>
+        <Text style={styles.title}>{i18n.t('plan.weekPlan')}</Text>
         <TouchableOpacity 
           style={styles.addWeekButton}
           onPress={() => setWeekSelectorVisible(true)}
@@ -273,14 +278,14 @@ export default function PlannerScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              Keine Wochenpläne vorhanden. Erstelle einen neuen Wochenplan oder plane deine Woche.
+              {i18n.t('plan.noWeekPlans')}
             </Text>
             <TouchableOpacity 
               style={styles.addWeekButtonEmpty}
               onPress={() => setWeekSelectorVisible(true)}
             >
               <PlatformIcon icon={Plus} size={16} color="#FFF" />
-              <Text style={styles.addWeekButtonEmptyText}>Woche hinzufügen</Text>
+              <Text style={styles.addWeekButtonEmptyText}>{i18n.t('plan.addWeek')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -296,45 +301,45 @@ export default function PlannerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Woche auswählen</Text>
+              <Text style={styles.modalTitle}>{i18n.t('plan.selectWeek')}</Text>
               <TouchableOpacity onPress={() => setWeekSelectorVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Neue Woche hinzufügen:</Text>
+            <Text style={styles.modalSubtitle}>{i18n.t('plan.addWeek')}:</Text>
             
             <View style={styles.weekOptions}>
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(1)}
               >
-                <Text style={styles.weekOptionText}>Nächste Woche</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('plan.nextWeek')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(2)}
               >
-                <Text style={styles.weekOptionText}>In 2 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('plan.twoWeeks')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(3)}
               >
-                <Text style={styles.weekOptionText}>In 3 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('plan.threeWeeks')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.weekOption}
                 onPress={() => createNewWeek(4)}
               >
-                <Text style={styles.weekOptionText}>In 4 Wochen</Text>
+                <Text style={styles.weekOptionText}>{i18n.t('plan.fourWeeks')}</Text>
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Vorhandene Wochen:</Text>
+            <Text style={styles.modalSubtitle}>{i18n.t('plan.existingWeeks')}:</Text>
             
             <ScrollView style={styles.existingWeeks}>
               {weekPlans.map((plan) => (
@@ -373,7 +378,7 @@ export default function PlannerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Rezept verschieben</Text>
+              <Text style={styles.modalTitle}>{i18n.t('plan.moveRecipe')}</Text>
               <TouchableOpacity onPress={() => setMoveModalVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>
@@ -389,10 +394,10 @@ export default function PlannerScreen() {
               </View>
             )}
             
-            <Text style={styles.modalSubtitle}>Ziel auswählen:</Text>
+            <Text style={styles.modalSubtitle}>{i18n.t('plan.selectTargetDay')}</Text>
             
             <View style={styles.moveOptionsContainer}>
-              <Text style={styles.moveOptionLabel}>Tag:</Text>
+              <Text style={styles.moveOptionLabel}>{i18n.t('plan.day')}:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daySelector}>
                 {Object.keys(weekPlans.find(week => week.id === expandedWeek)?.days || {}).map((day) => (
                   <TouchableOpacity 
@@ -422,7 +427,7 @@ export default function PlannerScreen() {
               onPress={handleMoveRecipe}
               disabled={!targetDay}
             >
-              <Text style={styles.moveButtonText}>Verschieben</Text>
+              <Text style={styles.moveButtonText}>{i18n.t('common.move')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -438,7 +443,7 @@ export default function PlannerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Rezept bearbeiten</Text>
+              <Text style={styles.modalTitle}>{i18n.t('plan.editRecipe')}</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>
@@ -454,8 +459,7 @@ export default function PlannerScreen() {
             <View style={styles.warningContainer}>
               <PlatformIcon icon={AlertTriangle} size={20} color="#FF6B35" style={styles.warningIcon} />
               <Text style={styles.warningText}>
-                Hinweis: Durch die Bearbeitung des Rezepts kann sich die Zutatenzusammensetzung ändern. 
-                Dies kann Auswirkungen auf Ihre Einkaufsliste haben.
+                {i18n.t('plan.editRecipeWarning')}
               </Text>
             </View>
             
@@ -467,14 +471,14 @@ export default function PlannerScreen() {
                 router.push('/cook');
               }}
             >
-              <Text style={styles.editButtonText}>Rezept bearbeiten</Text>
+              <Text style={styles.editButtonText}>{i18n.t('plan.editRecipe')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.cancelButton}
               onPress={() => setEditModalVisible(false)}
             >
-              <Text style={styles.cancelButtonText}>Abbrechen</Text>
+              <Text style={styles.cancelButtonText}>{i18n.t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -490,7 +494,7 @@ export default function PlannerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Rezept kochen</Text>
+              <Text style={styles.modalTitle}>{i18n.t('plan.cookRecipe')}</Text>
               <TouchableOpacity onPress={() => setCookModalVisible(false)}>
                 <PlatformIcon icon={X} size={24} color="#333" />
               </TouchableOpacity>
@@ -508,14 +512,14 @@ export default function PlannerScreen() {
               onPress={startCooking}
             >
               <PlatformIcon icon={ChefHat} size={20} color="#FFF" style={styles.cookButtonIcon} />
-              <Text style={styles.cookButtonText}>Jetzt kochen</Text>
+              <Text style={styles.cookButtonText}>{i18n.t('plan.cookNow')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.cancelButton}
               onPress={() => setCookModalVisible(false)}
             >
-              <Text style={styles.cancelButtonText}>Abbrechen</Text>
+              <Text style={styles.cancelButtonText}>{i18n.t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

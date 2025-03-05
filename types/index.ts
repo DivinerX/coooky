@@ -25,3 +25,15 @@ export interface ShoppingListItem {
   amount: string;
   unit: string;
 }
+
+export interface WeekPlan {
+  id: string;
+  name: string;
+  date: Date;
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  days: {
+    [key: string]: Recipe[];
+  };
+}

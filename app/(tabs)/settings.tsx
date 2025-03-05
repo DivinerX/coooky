@@ -1,14 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Bell, Heart, CircleAlert as AlertCircle, CircleHelp as HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
+import i18n, { changeLanguage } from '../../utils/i18n';
 import PreferencesScreen from '../../components/preferences';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [voiceGuide, setVoiceGuide] = useState(true);
   const [preferencesVisible, setPreferencesVisible] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.locale);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'de', name: 'Deutsch' },
+    { code: 'es', name: 'Español' }
+  ];
+
+  useEffect(() => {
+    const loadLanguage = async () => {
+      const savedLanguage = await AsyncStorage.getItem('@user_language');
+      if (savedLanguage) {
+        setSelectedLanguage(savedLanguage);
+      }
+    };
+    loadLanguage();
+  }, []);
+
+  const handleLanguageChange = async (languageCode: string) => {
+    await changeLanguage(languageCode);
+    setSelectedLanguage(languageCode);
+    setLanguageModalVisible(false);
+  };
 
   const openPreferences = () => {
     setPreferencesVisible(true);
@@ -17,7 +43,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Einstellungen</Text>
+        <Text style={styles.title}>{i18n.t('settings.title')}</Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -30,17 +56,17 @@ export default function SettingsScreen() {
             <Text style={styles.profileEmail}>max.mustermann@example.com</Text>
           </View>
           <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Bearbeiten</Text>
+            <Text style={styles.editButtonText}>{i18n.t('settings.edit')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Allgemein</Text>
+          <Text style={styles.sectionTitle}>{i18n.t('settings.general')}</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Bell size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Benachrichtigungen</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.notifications')}</Text>
             </View>
             <Switch
               value={notifications}
@@ -56,7 +82,7 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingInfo}>
               <Heart size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Ernährungspräferenzen</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.nutritionalPreferences')}</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
@@ -64,11 +90,11 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App-Einstellungen</Text>
+          <Text style={styles.sectionTitle}>{i18n.t('settings.appSettings')}</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Dunkler Modus</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.darkMode')}</Text>
             </View>
             <Switch
               value={darkMode}
@@ -80,7 +106,7 @@ export default function SettingsScreen() {
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Sprachführung</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.voiceGuide')}</Text>
             </View>
             <Switch
               value={voiceGuide}
@@ -92,43 +118,48 @@ export default function SettingsScreen() {
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Sprache</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.language')}</Text>
             </View>
-            <View style={styles.valueContainer}>
-              <Text style={styles.valueText}>Deutsch</Text>
+            <TouchableOpacity 
+              style={styles.valueContainer}
+              onPress={() => setLanguageModalVisible(true)}
+            >
+              <Text style={styles.valueText}>
+                {languages.find(lang => lang.code === selectedLanguage)?.name}
+              </Text>
               <ChevronRight size={20} color="#CCC" />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hilfe & Support</Text>
+          <Text style={styles.sectionTitle}>{i18n.t('settings.helpSupport')}</Text>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <HelpCircle size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Häufig gestellte Fragen</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.faq')}</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Kontakt</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.contact')}</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Datenschutz</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.privacy')}</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>Nutzungsbedingungen</Text>
+              <Text style={styles.settingText}>{i18n.t('settings.terms')}</Text>
             </View>
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
@@ -136,10 +167,10 @@ export default function SettingsScreen() {
 
         <TouchableOpacity style={styles.logoutButton}>
           <LogOut size={20} color="#FF3B30" />
-          <Text style={styles.logoutText}>Abmelden</Text>
+          <Text style={styles.logoutText}>{i18n.t('settings.logout')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.versionText}>{i18n.t('settings.version')}</Text>
       </ScrollView>
 
       <Modal
@@ -149,6 +180,38 @@ export default function SettingsScreen() {
         onRequestClose={() => setPreferencesVisible(false)}
       >
         <PreferencesScreen onClose={() => setPreferencesVisible(false)} />
+      </Modal>
+
+      <Modal
+        visible={languageModalVisible}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{i18n.t('settings.selectLanguage')}</Text>
+            {languages.map(language => (
+              <TouchableOpacity
+                key={language.code}
+                style={styles.languageOption}
+                onPress={() => handleLanguageChange(language.code)}
+              >
+                <Text style={[
+                  styles.languageText,
+                  selectedLanguage === language.code && styles.selectedLanguage
+                ]}>
+                  {language.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setLanguageModalVisible(false)}
+            >
+              <Text style={styles.cancelText}>{i18n.t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -274,5 +337,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginBottom: 30,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  languageOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  languageText: {
+    fontSize: 16,
+  },
+  selectedLanguage: {
+    color: '#FF6B35',
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    marginTop: 20,
+    padding: 15,
+    alignItems: 'center',
+  },
+  cancelText: {
+    color: '#FF6B35',
+    fontSize: 16,
   },
 });
