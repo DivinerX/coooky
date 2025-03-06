@@ -130,7 +130,7 @@ export const moveRecipe = (weekId, sourceDay, targetDay, recipe) => {
 };
 
 // Delete a specific recipe from a day
-export const deleteRecipe = (weekId, day, recipeId) => {
+export const deleteRecipe = async (weekId, day, recipeId) => {
   const weekIndex = weekPlans.findIndex(plan => plan.id === weekId);
   
   if (weekIndex === -1) return false;
@@ -144,6 +144,9 @@ export const deleteRecipe = (weekId, day, recipeId) => {
   
   // Remove only the specific recipe
   weekPlans[weekIndex].days[day].splice(recipeIndex, 1);
+  
+  // Save changes to storage
+  await saveWeekPlans();
   
   return true;
 };

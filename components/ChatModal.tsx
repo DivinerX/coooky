@@ -24,10 +24,10 @@ interface IChatModalProps {
   handleServingsOption: (servings: number | 'custom') => void;
   generatedRecipes: any[];
   addToShoppingList: () => Promise<void>;
-  navigateToShoppingList: () => void;
+  navigateToShoppingList: () => Promise<void>;
   startCookingRecipe: (recipe: any) => void;
   scrollViewRef: any;
-  addToWeekPlan: () => void;
+  addToWeekPlan: () => Promise<void>;
 }
 
 export const ChatModal = ({
@@ -272,7 +272,7 @@ export const ChatModal = ({
                     try {
                       await addToWeekPlan();
                       Alert.alert(
-                        i18n.t('chat.success'),
+                        i18n.t('common.success'),
                         i18n.t('chat.recipesAddedToWeekPlan')
                       );
                     } catch (error) {
@@ -292,7 +292,7 @@ export const ChatModal = ({
                   showNavigateToShoppingList ? (
                     <TouchableOpacity
                       style={styles.shoppingListButton}
-                      onPress={navigateToShoppingList}
+                      onPress={async () => await navigateToShoppingList()}
                     >
                       <ShoppingCart size={16} color="#FFF" style={styles.shoppingListButtonIcon} />
                       <Text style={styles.shoppingListButtonText}>{i18n.t('chat.shoppingList')}</Text>

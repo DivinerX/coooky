@@ -11,6 +11,9 @@ export default {
     deleteAllConfirmationTitle: "Alle Elemente löschen",
     cancel: "Abbrechen",
     move: "Verschieben",
+    ok: "OK",
+    success: "Success",
+    error: "Error",
     week: "Woche",
     days: {
       monday: "Montag",
@@ -68,9 +71,9 @@ export default {
     initialMessage: "Bevor wir beginnen, haben Sie irgendwelche besonderen Ernährungsanforderungen oder Allergien, die ich berücksichtigen sollte?",
     writeMessage: "Schreiben Sie eine Nachricht...",
     analyzingPreferences: "Prüfen von Präferenzen",
-    recipeRequestMessage: "Was möchten Sie heute kochen?",
+    recipeRequestMessage: "What do we want to cook? What do you like?",
     surpriseMe: "Überrasche mich",
-    servingsMessage: "Wie viele Portionen möchten Sie?",
+    servingsMessage: "How many portions would you like per recipe?",
     recipeCountMessage: "Wie viele Rezepte möchten Sie generieren?",
     custom: "Custom",
     servingMessage: "Ich plan mit {{servings}} Portionen pro Rezept und erstelle {{recipeCount}} passende Rezepte für Sie...",
@@ -95,6 +98,10 @@ export default {
     addToShoppingList: "Zur Einkaufsliste hinzufügen",
     addToWeekPlan: "Zum Wochenplan hinzufügen",
     shoppingList: "Einkaufsliste",
+    shoppingListUpdated: "Shopping List Updated",
+    errorAddingToShoppingList: "Error adding to shopping list",
+    recipesAddedToWeekPlan: "Recipes added to week plain",
+    recipesNotAddedToWeekPlan: "Recipes not added to week plan"
   },
   categories: {
     asian: "Asiatisch",
@@ -121,6 +128,7 @@ export default {
     addItemPlaceholder: "Artikel hinzufügen...",
     deleteAll: "Alle löschen",
     noLists: "Keine Einkaufslisten gefunden. Erstellen Sie eine neue Einkaufsliste oder fügen Sie Artikel zu Ihrer Einkaufsliste hinzu.",
+    ingredientsNotAdded: "Ingredients not added to shopping list",
   },
   settings: {
     title: "Einstellungen",

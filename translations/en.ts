@@ -11,6 +11,9 @@ export default {
     deleteAllConfirmationTitle: "Delete All Items",
     cancel: "Cancel",
     move: "Move",
+    ok: "OK",
+    success: "Success",
+    error: "Error",
     week: "Week",
     days: {
       monday: "Monday",
@@ -68,9 +71,9 @@ export default {
     initialMessage: "Before we begin, do you have any special dietary requirements or allergies I should consider?",
     writeMessage: "Write a message...",
     analyzingPreferences: "Analyzing preferences",
-    recipeRequestMessage: "What do you hunger for today?",
+    recipeRequestMessage: "What do we want to cook? What do you like?",
     surpriseMe: "Surprise me",
-    servingsMessage: "How many servings would you like?",
+    servingsMessage: "How many portions would you like per recipe?",
     recipeCountMessage: "How many recipes would you like to generate?",
     custom: "Custom",
     servingMessage: "I plan with {{servings}} servings per recipe and create {{recipeCount}} suitable recipes for you...",
@@ -95,6 +98,10 @@ export default {
     addToShoppingList: "Add to shopping list",
     addToWeekPlan: "Add to week plan",
     shoppingList: "Shopping List",
+    shoppingListUpdated: "Shopping List Updated",
+    errorAddingToShoppingList: "Error adding to shopping list",
+    recipesAddedToWeekPlan: "Recipes added to week plain",
+    recipesNotAddedToWeekPlan: "Recipes not added to week plan"
   },
   categories: {
     asian: "Asian",
@@ -121,6 +128,7 @@ export default {
     addItemPlaceholder: "Add item...",
     deleteAll: "Delete All",
     noLists: "No shopping lists found. Create a new shopping list or add items to your shopping list.",
+    ingredientsNotAdded: "Ingredients not added to shopping list",
   },
   settings: {
     title: "Settings",

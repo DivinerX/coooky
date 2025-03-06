@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Ale
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Plus, ChevronRight, Pencil, Trash2, ChevronDown, X, ChevronUp, TriangleAlert as AlertTriangle, ChefHat } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import PlatformIcon from '../../components/PlatformIcon';
-import { getWeekPlans, addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '../../utils/weekPlanManager';
-import { setCurrentRecipe } from '../../utils/recipeManager';
+import PlatformIcon from '@/components/PlatformIcon';
+import { getWeekPlans, addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '@/utils/weekPlanManager';
+import { setCurrentRecipe } from '@/utils/recipeManager';
 import i18n from '@/utils/i18n';
 import { Recipe, WeekPlan } from '@/types';
 export default function PlannerScreen() {
@@ -82,32 +82,30 @@ export default function PlannerScreen() {
     setMoveModalVisible(false);
   };
 
-  const handleDeleteRecipe = (weekId: string, day: string, recipeId: string) => {
+  const handleDeleteRecipe = async (weekId: string, day: string, recipeId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
-      if (window.confirm('Rezept wirklich löschen?')) {
-        deleteRecipe(weekId, day, recipeId); // Pass all three parameters
-        
-        // Update state with the new plans
-        const updatedWeekPlans = getWeekPlans();
+      if (window.confirm(i18n.t('common.deleteItemConfirmationMessage'))) {
+        await deleteRecipe(weekId, day, recipeId);
+        // Use loadWeekPlans instead of getWeekPlans
+        const updatedWeekPlans = await loadWeekPlans();
         setWeekPlans(updatedWeekPlans);
       }
     } else {
       Alert.alert(
-        'Rezept löschen',
-        'Rezept wirklich löschen?',
+        i18n.t('common.deleteItemConfirmationTitle'),
+        i18n.t('common.deleteItemConfirmationMessage'),
         [
           {
-            text: 'Abbrechen',
+            text: i18n.t('common.cancel'),
             style: 'cancel'
           },
           {
-            text: 'Löschen',
-            onPress: () => {
-              deleteRecipe(weekId, day, recipeId); // Pass all three parameters
-              
-              // Update state with the new plans
-              const updatedWeekPlans = getWeekPlans();
+            text: i18n.t('common.delete'),
+            onPress: async () => {
+              await deleteRecipe(weekId, day, recipeId);
+              // Use loadWeekPlans instead of getWeekPlans
+              const updatedWeekPlans = await loadWeekPlans();
               setWeekPlans(updatedWeekPlans);
             },
             style: 'destructive'
@@ -151,7 +149,7 @@ export default function PlannerScreen() {
     return (
       <TouchableOpacity 
         style={styles.recipeItem} 
-        key={`${day}-${recipe.id}`}
+        key={`${weekId}-${day}-${recipe.id}`}
         onLongPress={() => {
           setIsDragging(true);
           openMoveModal(day, recipe);

@@ -7,9 +7,10 @@ import PlatformIcon from '../../components/PlatformIcon';
 import { getAllRecipes, getCurrentRecipe, getRecipeById, setCurrentRecipe } from '../../utils/recipeManager';
 import { getWeekPlans } from '../../utils/weekPlanManager';
 import i18n from '@/utils/i18n';
+import { Recipe } from '@/types';
 
 export default function CookScreen() {
-  const [recipe, setRecipe] = useState(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [servings, setServings] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);

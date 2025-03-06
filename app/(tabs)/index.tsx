@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mic, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -488,7 +488,22 @@ export default function MainScreen() {
       // Add ingredients to shopping list
       await addItemsToShoppingList(ingredients);
 
-      // Show confirmation message
+      // Show success alert
+      if (Platform.OS === 'web') {
+        window.alert(i18n.t('chat.shoppingListUpdated'));
+      } else {
+        Alert.alert(
+          i18n.t('common.success'),
+          i18n.t('chat.shoppingListUpdated'),
+          [
+            {
+              text: i18n.t('common.ok')
+            }
+          ]
+        );
+      }
+      
+      // Show confirmation message in chat
       const confirmationMessage: Message = {
         id: Date.now().toString(),
         text: i18n.t('chat.shoppingListUpdated'),
@@ -497,6 +512,18 @@ export default function MainScreen() {
       setMessages(prev => [...prev, confirmationMessage]);
     } catch (error) {
       console.error('Error adding to shopping list:', error);
+      
+      // Show error alert
+      if (Platform.OS === 'web') {
+        window.alert(i18n.t('chat.errorAddingToShoppingList'));
+      } else {
+        Alert.alert(
+          i18n.t('common.error'),
+          i18n.t('chat.errorAddingToShoppingList'),
+          [{ text: i18n.t('common.ok') }]
+        );
+      }
+
       const errorMessage: Message = {
         id: Date.now().toString(),
         text: i18n.t('chat.errorAddingToShoppingList'),
