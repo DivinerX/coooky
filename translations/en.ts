@@ -5,6 +5,10 @@ export default {
     singleRecipe: "Single Recipe",
     weeklyPlanning: "Weekly Planning",
     surpriseMe: "Surprise me",
+    deleteItemConfirmationTitle: "Delete Item",
+    deleteItemConfirmationMessage: "Are you sure you want to delete this item?",
+    deleteAllConfirmationMessage: "Are you sure you want to delete?",
+    deleteAllConfirmationTitle: "Delete All Items",
     cancel: "Cancel",
     move: "Move",
     week: "Week",
@@ -90,6 +94,7 @@ export default {
     generatedRecipesResult: "Here are {{count}} recipes based on your preferences:",
     addToShoppingList: "Add to shopping list",
     addToWeekPlan: "Add to week plan",
+    shoppingList: "Shopping List",
   },
   categories: {
     asian: "Asian",

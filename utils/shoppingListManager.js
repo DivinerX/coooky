@@ -101,20 +101,20 @@ export const addNewShoppingList = async (weeksAhead = 0) => {
 };
 
 // Add ingredients to shopping list
-export const addToShoppingList = async (ingredients, date = new Date()) => {
+export const addToShoppingList = async (ingredients, listId) => {
   await loadShoppingLists();
   
-  const weekNumber = getWeekNumber(date);
-  const year = date.getFullYear();
-  
-  let listIndex = shoppingLists.findIndex(
-    list => list.weekNumber === weekNumber && list.year === year
-  );
+  let listIndex = shoppingLists.findIndex(list => list.id === listId);
   
   if (listIndex === -1) {
-    await addNewShoppingList(0);
-    await loadShoppingLists();
-    listIndex = 0;
+    console.error('Shopping list not found:', {
+      providedListId: listId,
+      availableLists: shoppingLists.map(list => ({ id: list.id, name: list.name }))
+    });
+    // Create a new list if none exists
+    const newList = await addNewShoppingList(0);
+    listIndex = 0; // The new list is added at the beginning of the array
+    console.log('Created new shopping list:', newList.id);
   }
   
   // Categorize ingredients
@@ -125,21 +125,21 @@ export const addToShoppingList = async (ingredients, date = new Date()) => {
       categorizedIngredients[category] = [];
     }
     
-    // Generate a truly unique ID using timestamp, random string, and ingredient name
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${ingredient.name.toLowerCase().replace(/\s+/g, '-')}`;
     
-    // Check for duplicates by name
-    const existingIndex = categorizedIngredients[category].findIndex(
+    // Check for duplicates by name in the specific list and category
+    const existingCategory = shoppingLists[listIndex].categories.find(c => c.category === category);
+    const existingItem = existingCategory?.items.find(
       item => item.name.toLowerCase() === ingredient.name.toLowerCase()
     );
     
-    if (existingIndex !== -1) {
+    if (existingItem) {
       // Update existing item but keep its original ID
-      categorizedIngredients[category][existingIndex] = {
+      categorizedIngredients[category].push({
         ...ingredient,
-        id: categorizedIngredients[category][existingIndex].id,
-        checked: false
-      };
+        id: existingItem.id,
+        checked: existingItem.checked
+      });
     } else {
       // Add new item with unique ID
       categorizedIngredients[category].push({

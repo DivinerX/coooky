@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mic, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { addToShoppingList as addItemsToShoppingList } from '../../utils/shoppingListManager';
-import { checkIfCookingRelated, generateCookingSuggestions } from '../../utils/openAiService';
-import { setCurrentRecipe } from '../../utils/recipeManager';
-import { Message, Recipe, ShoppingListItem } from '../../types';
+import { addToShoppingList as addItemsToShoppingList } from '@/utils/shoppingListManager';
+import { checkIfCookingRelated, generateCookingSuggestions } from '@/utils/openAiService';
+import { setCurrentRecipe } from '@/utils/recipeManager';
+import { Message, Recipe } from '@/types';
 import { ChatModal } from '@/components/ChatModal';
 import { addRecipesToWeekPlan, addNewWeekPlan, getWeekPlans } from '@/utils/weekPlanManager';
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
-import i18n from '../../utils/i18n';
+import i18n from '@/utils/i18n';
 
 // Define cuisine categories
 const CUISINE_CATEGORIES = [
@@ -312,7 +312,7 @@ export default function MainScreen() {
     
     const updateProgressMessage = (stage: string, progress: number) => {
       setMessages(prev => prev.map(msg => {
-        if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
+        if (msg.isGenerating) {
           return {
             ...msg,
             text: i18n.t('chat.servingMessage', { servings, recipeCount }),
@@ -329,18 +329,18 @@ export default function MainScreen() {
       // Start the actual API call early
       const recipePromise = generateCookingSuggestions(preferences, recipeCount, servings);
 
-      // Progress stages without any emojis or special characters
+      // Get stages dynamically using i18n
       const stages = [
-        { message: i18n.t('chat.progress.startRecipeSearch'), progress: 5 },
-        { message: i18n.t('chat.progress.searchCookbooks'), progress: 15 },
-        { message: i18n.t('chat.progress.analyzeIngredients'), progress: 25 },
-        { message: i18n.t('chat.progress.createRecipeDrafts'), progress: 35 },
-        { message: i18n.t('chat.progress.optimizeIngredientList'), progress: 45 },
-        { message: i18n.t('chat.progress.refineSpices'), progress: 55 },
-        { message: i18n.t('chat.progress.calculateQuantities'), progress: 65 },
-        { message: i18n.t('chat.progress.checkCombinations'), progress: 75 },
-        { message: i18n.t('chat.progress.finalizeRecipes'), progress: 85 },
-        { message: i18n.t('chat.progress.prepareSuggestions'), progress: 95 }
+        { message: () => i18n.t('chat.progress.startRecipeSearch'), progress: 5 },
+        { message: () => i18n.t('chat.progress.searchCookbooks'), progress: 15 },
+        { message: () => i18n.t('chat.progress.analyzeIngredients'), progress: 25 },
+        { message: () => i18n.t('chat.progress.createRecipeDrafts'), progress: 35 },
+        { message: () => i18n.t('chat.progress.optimizeIngredientList'), progress: 45 },
+        { message: () => i18n.t('chat.progress.refineSpices'), progress: 55 },
+        { message: () => i18n.t('chat.progress.calculateQuantities'), progress: 65 },
+        { message: () => i18n.t('chat.progress.checkCombinations'), progress: 75 },
+        { message: () => i18n.t('chat.progress.finalizeRecipes'), progress: 85 },
+        { message: () => i18n.t('chat.progress.prepareSuggestions'), progress: 95 }
       ];
 
       // Calculate base interval between updates
@@ -348,12 +348,12 @@ export default function MainScreen() {
 
       // Function to add random variation to intervals
       const getRandomizedInterval = (baseTime: number) => {
-        const variation = baseTime * 0.4; // 40% variation for more unpredictability
+        const variation = baseTime * 0.4;
         return baseTime + (Math.random() * variation - variation / 2);
       };
 
       // Show initial stage with bounce animation
-      updateProgressMessage(stages[0].message, stages[0].progress);
+      updateProgressMessage(stages[0].message(), stages[0].progress);
 
       // Progress through stages with randomized timing and bounce effects
       for (let i = 1; i < stages.length; i++) {
@@ -374,12 +374,12 @@ export default function MainScreen() {
           const bounceVariation = Math.sin(j * Math.PI / 2) * 2;
           const adjustedProgress = Math.min(100, Math.max(0, intermediateProgress + bounceVariation));
           
-          updateProgressMessage(stage.message, adjustedProgress);
+          updateProgressMessage(stage.message(), adjustedProgress);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
         
         // Settle on the actual target progress
-        updateProgressMessage(stage.message, stage.progress);
+        updateProgressMessage(stage.message(), stage.progress);
       }
 
       // Wait for the API response
@@ -396,7 +396,7 @@ export default function MainScreen() {
 
         // Update final message
         setMessages(prev => prev.map(msg => {
-          if (msg.text.startsWith('Gerne. Ich plane mit') && msg.isGenerating) {
+          if (msg.text.includes(i18n.t('chat.servingMessage', { servings: 0, recipeCount: 0 }).split('0')[0]) && msg.isGenerating) {
             return {
               ...msg,
               isGenerating: false,

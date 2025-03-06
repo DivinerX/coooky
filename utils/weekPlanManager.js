@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WeekPlan } from '@/types';
+import i18n from '@/utils/i18n';
 
 const WEEK_PLANS_KEY = 'week_plans';
 

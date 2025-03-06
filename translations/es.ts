@@ -80,6 +80,7 @@ export default {
     generatedRecipesResult: "Aquí están {{count}} recetas basadas en sus preferencias:",
     addToShoppingList: "Añadir a la lista de compras",
     addToWeekPlan: "Añadir al plan de semana",
+    shoppingList: "Lista de compras",
   },
   categories: {
     asian: "Asiático",

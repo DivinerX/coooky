@@ -5,8 +5,22 @@ export default {
     singleRecipe: "Einzeln Rezept",
     weeklyPlanning: "Wochenplan",
     surpriseMe: "Überrasche mich",
+    deleteItemConfirmationTitle: "Element löschen",
+    deleteItemConfirmationMessage: "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
+    deleteAllConfirmationMessage: "Sind Sie sicher, dass Sie alles löschen möchten?",
+    deleteAllConfirmationTitle: "Alle Elemente löschen",
     cancel: "Abbrechen",
     move: "Verschieben",
+    week: "Woche",
+    days: {
+      monday: "Montag",
+      tuesday: "Dienstag",
+      wednesday: "Mittwoch",
+      thursday: "Donnerstag",
+      friday: "Freitag",
+      saturday: "Samstag",
+      sunday: "Sonntag",
+    }
   },
   tabs: {
     discover: "Entdecken",
@@ -80,6 +94,7 @@ export default {
     generatedRecipesResult: "Hier sind {{count}} Rezepte basierend auf Ihren Präferenzen:",
     addToShoppingList: "Zur Einkaufsliste hinzufügen",
     addToWeekPlan: "Zum Wochenplan hinzufügen",
+    shoppingList: "Einkaufsliste",
   },
   categories: {
     asian: "Asiatisch",

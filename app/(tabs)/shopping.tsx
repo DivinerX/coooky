@@ -6,12 +6,13 @@ import PlatformIcon from '../../components/PlatformIcon';
 import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '../../utils/shoppingListManager';
 import { useFocusEffect } from '@react-navigation/native';
 import i18n from '../../utils/i18n';
+import { ShoppingList } from '@/types';
 
 export default function ShoppingScreen() {
-  const [shoppingLists, setShoppingLists] = useState([]);
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [newItem, setNewItem] = useState('');
   const [showChecked, setShowChecked] = useState(true);
-  const [expandedList, setExpandedList] = useState(null);
+  const [expandedList, setExpandedList] = useState<string | null>(null);
   const [weekSelectorVisible, setWeekSelectorVisible] = useState(false);
   
   useFocusEffect(
@@ -22,10 +23,10 @@ export default function ShoppingScreen() {
 
   const loadShoppingLists = async () => {
     const lists = await getShoppingLists();
-    setShoppingLists(lists as never[]);
+    setShoppingLists(lists as ShoppingList[]);
     
-    // If there's a current week list, expand it by default
-    if (lists.length > 0) {
+    // Only set expandedList if it's not already set
+    if (!expandedList && lists.length > 0) {
       setExpandedList(lists[0].id);
     }
   };
@@ -45,8 +46,8 @@ export default function ShoppingScreen() {
       category: 'Sonstiges'
     };
     
-    await addToShoppingList([ingredient]);
-    await loadShoppingLists(); // Reload the lists after adding
+    await addToShoppingList([ingredient], expandedList);
+    await loadShoppingLists();
     setNewItem('');
   };
 
@@ -61,7 +62,7 @@ export default function ShoppingScreen() {
   const confirmDeleteAll = (listId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
-      if (window.confirm('Wirklich alles löschen?')) {
+      if (window.confirm(i18n.t('common.deleteAllConfirmationMessage'))) {
         handleDeleteAllItems(listId);
       }
     } else {
@@ -90,7 +91,7 @@ export default function ShoppingScreen() {
   
   const createNewWeek = async (weeksAhead: number) => {
     const newList = await addNewShoppingList(weeksAhead);
-    setShoppingLists([newList as never, ...shoppingLists]);
+    setShoppingLists(await getShoppingLists());
     setExpandedList(newList.id);
     setWeekSelectorVisible(false);
   };
@@ -98,21 +99,21 @@ export default function ShoppingScreen() {
   const handleDeleteItem = async (listId: string, categoryName: string, itemId: string) => {
     // Show confirmation dialog
     if (Platform.OS === 'web') {
-      if (window.confirm(i18n.t('shopping.deleteItemConfirmationMessage'))) {
+      if (window.confirm(i18n.t('common.deleteItemConfirmationMessage'))) {
         await deleteItem(listId, categoryName, itemId);
         await loadShoppingLists();
       }
     } else {
       Alert.alert(
-        i18n.t('shopping.deleteItemConfirmationTitle'),
-        i18n.t('shopping.deleteItemConfirmationMessage'),
+        i18n.t('common.deleteItemConfirmationTitle'),
+        i18n.t('common.deleteItemConfirmationMessage'),
         [
           {
-            text: i18n.t('shopping.cancel'),
+            text: i18n.t('common.cancel'),
             style: 'cancel'
           },
           {
-            text: i18n.t('shopping.delete'),
+            text: i18n.t('common.delete'),
             onPress: async () => {
               await deleteItem(listId, categoryName, itemId);
               await loadShoppingLists();
@@ -124,7 +125,7 @@ export default function ShoppingScreen() {
     }
   };
 
-  const renderShoppingList = (list: any) => {
+  const renderShoppingList = (list: ShoppingList) => {
     const isExpanded = expandedList === list.id;
     
     return (
@@ -173,7 +174,6 @@ export default function ShoppingScreen() {
             </View>
             
             {list.categories.map((category: any) => {
-              // Filter out checked items if showChecked is false
               const filteredItems = showChecked 
                 ? category.items 
                 : category.items.filter((item: any) => !item.checked);
@@ -205,10 +205,8 @@ export default function ShoppingScreen() {
                           item.checked && styles.itemNameChecked
                         ]}>
                           {item.name}
+                          {item.amount ? ` ${item.amount}` : ''}
                         </Text>
-                        {item.amount && (
-                          <Text style={styles.itemAmount}>{item.amount}</Text>
-                        )}
                       </View>
                       
                       <TouchableOpacity 
@@ -529,11 +527,6 @@ const styles = StyleSheet.create({
   itemNameChecked: {
     textDecorationLine: 'line-through',
     color: '#999',
-  },
-  itemAmount: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
   },
   deleteButton: {
     padding: 10,

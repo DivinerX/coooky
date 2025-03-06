@@ -41,10 +41,18 @@ export default function PlannerScreen() {
   };
 
   const createNewWeek = async (weeksAhead: number) => {
-    const newPlan = await addNewWeekPlan(weeksAhead);
-    setWeekPlans([newPlan, ...weekPlans]);
-    setExpandedWeek(newPlan.id);
-    setWeekSelectorVisible(false);
+    try {
+      // Add new week plan and get updated plans
+      const newPlan = await addNewWeekPlan(weeksAhead);
+      const updatedPlans = await loadWeekPlans(); // Get fresh plans from storage
+      
+      setWeekPlans(updatedPlans);
+      setExpandedWeek(newPlan.id);
+      setWeekSelectorVisible(false);
+    } catch (error) {
+      console.error('Error creating new week:', error);
+      // Optionally add error handling here (e.g., show alert to user)
+    }
   };
 
   const handleMoveRecipe = () => {

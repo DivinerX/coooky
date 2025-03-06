@@ -20,6 +20,16 @@ export interface Recipe {
   ingredients: any[];
 }
 
+export interface ShoppingList {
+  id: string;
+  name: string;
+  items: ShoppingListItem[];
+  categories: string[];
+  date: Date;
+  weekNumber: number;
+  year: number;
+}
+
 export interface ShoppingListItem {
   name: string;
   amount: string;

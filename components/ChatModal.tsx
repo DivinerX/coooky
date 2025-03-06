@@ -53,6 +53,9 @@ export const ChatModal = ({
   addToWeekPlan,
 }: IChatModalProps) => {
   const [showNavigateToShoppingList, setShowNavigateToShoppingList] = useState(false);
+  const [selectedCount, setSelectedCount] = useState<number | null>(null);
+  const [selectedServingCount, setSelectedServingCount] = useState<number | 'custom' | null>(null);
+  const [surpriseMeClicked, setSurpriseMeClicked] = useState(false);
 
   const handleAddToShoppingList = async () => {
     try {
@@ -143,10 +146,22 @@ export const ChatModal = ({
                 {/* Show "Überrasch mich" option after first question */}
                 {!message.isUser && message.showSurpriseMe && (
                   <TouchableOpacity
-                    style={styles.surpriseMeButton}
-                    onPress={handleSurpriseMe}
+                    style={[
+                      styles.surpriseMeButton,
+                      surpriseMeClicked && styles.optionButtonDisabled
+                    ]}
+                    onPress={() => {
+                      setSurpriseMeClicked(true);
+                      handleSurpriseMe();
+                    }}
+                    disabled={surpriseMeClicked}
                   >
-                    <Text style={styles.surpriseMeText}>{i18n.t('chat.surpriseMe')}</Text>
+                    <Text style={[
+                      styles.surpriseMeText,
+                      surpriseMeClicked && styles.optionTextDisabled
+                    ]}>
+                      {i18n.t('chat.surpriseMe')}
+                    </Text>
                   </TouchableOpacity>
                 )}
 
@@ -156,10 +171,24 @@ export const ChatModal = ({
                     {[2, 3, 4, 5].map((count) => (
                       <TouchableOpacity
                         key={count}
-                        style={styles.optionButton}
-                        onPress={() => handleRecipeCountOption(count)}
+                        style={[
+                          styles.optionButton,
+                          selectedCount === count && styles.optionButtonSelected,
+                          selectedCount !== null && selectedCount !== count && styles.optionButtonDisabled
+                        ]}
+                        onPress={() => {
+                          setSelectedCount(count);
+                          handleRecipeCountOption(count);
+                        }}
+                        disabled={selectedCount !== null}
                       >
-                        <Text style={styles.optionText}>{count}x</Text>
+                        <Text style={[
+                          styles.optionText,
+                          selectedCount === count && styles.optionTextSelected,
+                          selectedCount !== null && selectedCount !== count && styles.optionTextDisabled
+                        ]}>
+                          {count}x
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -171,17 +200,45 @@ export const ChatModal = ({
                     {[2, 3, 4].map((servings) => (
                       <TouchableOpacity
                         key={servings}
-                        style={styles.optionButton}
-                        onPress={() => handleServingsOption(servings)}
+                        style={[
+                          styles.optionButton,
+                          selectedServingCount === servings && styles.optionButtonSelected,
+                          selectedServingCount !== null && selectedServingCount !== servings && styles.optionButtonDisabled
+                        ]}
+                        onPress={() => {
+                          setSelectedServingCount(servings);
+                          handleServingsOption(servings);
+                        }}
+                        disabled={selectedServingCount !== null}
                       >
-                        <Text style={styles.optionText}>{servings}x</Text>
+                        <Text style={[
+                          styles.optionText,
+                          selectedServingCount === servings && styles.optionTextSelected,
+                          selectedServingCount !== null && selectedServingCount !== servings && styles.optionTextDisabled
+                        ]}>
+                          {servings}x
+                        </Text>
                       </TouchableOpacity>
                     ))}
                     <TouchableOpacity
-                      style={styles.optionButton}
-                      onPress={() => handleServingsOption('custom')}
+                      style={[
+                        styles.optionButton,
+                        selectedServingCount === 'custom' && styles.optionButtonSelected,
+                        selectedServingCount !== null && selectedServingCount !== 'custom' && styles.optionButtonDisabled
+                      ]}
+                      onPress={() => {
+                        setSelectedServingCount('custom');
+                        handleServingsOption('custom');
+                      }}
+                      disabled={selectedServingCount !== null}
                     >
-                      <Text style={styles.optionText}>{i18n.t('chat.custom')}</Text>
+                      <Text style={[
+                        styles.optionText,
+                        selectedServingCount === 'custom' && styles.optionTextSelected,
+                        selectedServingCount !== null && selectedServingCount !== 'custom' && styles.optionTextDisabled
+                      ]}>
+                        {i18n.t('chat.custom')}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -536,5 +593,20 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  optionButtonSelected: {
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
+  },
+  optionButtonDisabled: {
+    backgroundColor: '#F0F0F0',
+    borderColor: '#E0E0E0',
+    opacity: 0.5,
+  },
+  optionTextSelected: {
+    color: '#FFF',
+  },
+  optionTextDisabled: {
+    color: '#999',
   },
 });

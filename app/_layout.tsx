@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 import React from 'react';
-
+import { initializeLanguage } from '@/utils/i18n';
 declare global {
   interface Window {
     frameworkReady?: () => void;
@@ -13,6 +13,9 @@ declare global {
 
 export default function RootLayout() {
   useEffect(() => {
+    // Initialize language when the app starts
+    // initializeLanguage();
+    
     if (Platform.OS === 'web') {
       window.frameworkReady?.();
     }

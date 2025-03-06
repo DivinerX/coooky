@@ -11,9 +11,20 @@ const i18n = new I18n({
   es,
 });
 
-// Set the default locale
-i18n.defaultLocale = 'de';
-i18n.enableFallback = true;
+// Add event listener type and storage
+type LanguageChangeListener = () => void;
+const languageChangeListeners: LanguageChangeListener[] = [];
+
+// Add subscriber function
+export const onLanguageChange = (listener: LanguageChangeListener) => {
+  languageChangeListeners.push(listener);
+  return () => {
+    const index = languageChangeListeners.indexOf(listener);
+    if (index > -1) {
+      languageChangeListeners.splice(index, 1);
+    }
+  };
+};
 
 // Load the saved language or use device language
 export const initializeLanguage = async () => {
@@ -42,11 +53,13 @@ export const initializeLanguage = async () => {
   }
 };
 
-// Function to change language
+// Update changeLanguage function
 export const changeLanguage = async (language: string) => {
   try {
     await AsyncStorage.setItem('@user_language', language);
     i18n.locale = language;
+    // Notify all listeners of the language change
+    languageChangeListeners.forEach(listener => listener());
   } catch (error) {
     console.error('Error saving language:', error);
   }
