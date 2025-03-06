@@ -69,6 +69,10 @@ export const setCurrentRecipe = async (recipe) => {
   }
 };
 
+export const getSyncCurrentRecipe = () => {
+  return currentRecipe;
+}
+
 // Get current recipe
 export const getCurrentRecipe = async () => {
   try {

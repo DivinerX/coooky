@@ -132,14 +132,18 @@ export default function PlannerScreen() {
     setCookModalVisible(true);
   };
 
-  const startCooking = () => {
+  const startCooking = async () => {
     if (selectedRecipe) {
-      // Set the current recipe in the recipe manager
-      setCurrentRecipe(selectedRecipe);
-      
-      // Close the modal and navigate to the cook screen
-      setCookModalVisible(false);
-      router.push('/cook');
+      try {
+        // Set the current recipe in the recipe manager
+        await setCurrentRecipe(selectedRecipe);
+        
+        // Close the modal
+        setCookModalVisible(false);
+        router.push('/cook');
+      } catch (error) {
+        console.error('Error starting cooking:', error);
+      }
     }
   };
 
@@ -229,7 +233,7 @@ export default function PlannerScreen() {
         >
           <View style={styles.weekHeaderLeft}>
             <PlatformIcon icon={Calendar} size={20} color="#FF6B35" style={styles.weekIcon} />
-            <Text style={styles.weekTitle}>{weekPlan.name}</Text>
+            <Text style={styles.weekTitle}>{i18n.t('common.week')} {weekPlan.name}</Text>
           </View>
           <PlatformIcon 
             icon={isExpanded ? ChevronDown : ChevronRight} 
@@ -368,7 +372,7 @@ export default function PlannerScreen() {
                     styles.existingWeekText,
                     expandedWeek === plan.id && styles.existingWeekTextActive
                   ]}>
-                    {plan.name}
+                    {i18n.t('common.week')} {plan.name}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -398,7 +402,7 @@ export default function PlannerScreen() {
                 <Image source={{ uri: selectedRecipe.image }} style={styles.selectedRecipeImage} />
                 <Text style={styles.selectedRecipeTitle}>{selectedRecipe.title}</Text>
                 <Text style={styles.selectedRecipeInfo}>
-                  Aktuell: {selectedDay}
+                  {i18n.t('common.week')} {selectedDay}
                 </Text>
               </View>
             )}
@@ -474,8 +478,8 @@ export default function PlannerScreen() {
             
             <TouchableOpacity 
               style={styles.editButton}
-              onPress={() => {
-                setCurrentRecipe(selectedRecipe!);
+              onPress={async () => {
+                await setCurrentRecipe(selectedRecipe!);
                 setEditModalVisible(false);
                 router.push('/cook');
               }}
@@ -511,8 +515,8 @@ export default function PlannerScreen() {
             
             {selectedRecipe && (
               <View style={styles.selectedRecipeContainer}>
-                <Image source={{ uri: selectedRecipe.image }} style={styles.selectedRecipeImage} />
-                <Text style={styles.selectedRecipeTitle}>{selectedRecipe.title}</Text>
+                <Image source={{ uri: selectedRecipe!.image }} style={styles.selectedRecipeImage} />
+                <Text style={styles.selectedRecipeTitle}>{selectedRecipe!.title}</Text>
               </View>
             )}
             

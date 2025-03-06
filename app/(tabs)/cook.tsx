@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Play, Pause, SkipBack, SkipForward, Minus, Plus, Clock, Calendar, ChevronRight, X } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
-import PlatformIcon from '../../components/PlatformIcon';
-import { getAllRecipes, getCurrentRecipe, getRecipeById, setCurrentRecipe } from '../../utils/recipeManager';
-import { loadWeekPlans } from '../../utils/weekPlanManager';
+import PlatformIcon from '@/components/PlatformIcon';
+import { getAllRecipes, getCurrentRecipe, getSyncCurrentRecipe, getRecipeById, setCurrentRecipe } from '@/utils/recipeManager';
+import { loadWeekPlans } from '@/utils/weekPlanManager';
 import i18n from '@/utils/i18n';
 import { Recipe } from '@/types';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 export default function CookScreen() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -20,48 +22,51 @@ export default function CookScreen() {
   const [expandedDay, setExpandedDay] = useState(null);
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        // Load the current recipe if available
-        const currentRecipe = await getCurrentRecipe();
-        if (currentRecipe) {
-          // If the recipe doesn't have ingredients or steps, try to get the full recipe data
-          if (!currentRecipe.ingredients || !currentRecipe.steps) {
-            const fullRecipe = await getRecipeById(currentRecipe.id);
-            if (fullRecipe) {
-              setRecipe(fullRecipe);
-              setServings(fullRecipe.servings || 2);
+  useFocusEffect(
+    useCallback(() => {
+      const loadInitialData = async () => {
+        try {
+          // Load the current recipe if available
+          const currentRecipe = await getCurrentRecipe();
+          if (currentRecipe) {
+            // If the recipe doesn't have ingredients or steps, try to get the full recipe data
+            if (!currentRecipe.ingredients || !currentRecipe.steps) {
+              const fullRecipe = await getRecipeById(currentRecipe.id);
+              if (fullRecipe) {
+                setRecipe(fullRecipe);
+                setServings(fullRecipe.servings || 2);
+              } else {
+                setRecipe(currentRecipe);
+              }
             } else {
               setRecipe(currentRecipe);
+              setServings(currentRecipe.servings || 2);
             }
           } else {
-            setRecipe(currentRecipe);
-            setServings(currentRecipe.servings || 2);
+            // If no current recipe, show the recipe selection modal
+            setRecipeModalVisible(true);
           }
-        } else {
-          // If no current recipe, show the recipe selection modal
-          setRecipeModalVisible(true);
+
+          // Load all recipes
+          const recipes = await getAllRecipes();
+          setAllRecipes(recipes);
+
+          // Load week plans for recipe selection
+          const plans = await loadWeekPlans();
+          setWeekPlans(plans);
+          if (plans.length > 0) {
+            setExpandedWeek(plans[0].id);
+          }
+        } catch (error) {
+          console.error('Error loading initial data:', error);
         }
+      };
 
-        // Load all recipes
-        const recipes = await getAllRecipes();
-        setAllRecipes(recipes);
+      loadInitialData();
+    }, [])
+  );
 
-        // Load week plans for recipe selection
-        const plans = await loadWeekPlans();
-        setWeekPlans(plans);
-        if (plans.length > 0) {
-          setExpandedWeek(plans[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading initial data:', error);
-      }
-    };
-
-    loadInitialData();
-
-    // Clean up speech when component unmounts
+  useEffect(() => {
     return () => {
       if (Platform.OS !== 'web') {
         Speech.stop();
@@ -195,7 +200,7 @@ export default function CookScreen() {
               style={styles.weekPlanHeader}
               onPress={() => toggleWeekExpansion(weekPlan.id)}
             >
-              <Text style={styles.weekPlanTitle}>{weekPlan.name}</Text>
+              <Text style={styles.weekPlanTitle}>{i18n.t('common.week')} {weekPlan.name}</Text>
               <PlatformIcon 
                 icon={expandedWeek === weekPlan.id ? ChevronRight : ChevronRight} 
                 size={16} 
@@ -215,7 +220,7 @@ export default function CookScreen() {
                       style={styles.dayHeader}
                       onPress={() => toggleDayExpansion(day)}
                     >
-                      <Text style={styles.dayTitle}>{day}</Text>
+                      <Text style={styles.dayTitle}>{i18n.t(`common.days.${day}`)}</Text>
                       {recipes.length > 0 && (
                         <Text style={styles.recipeCount}>{recipes.length} Rezepte</Text>
                       )}
