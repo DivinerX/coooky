@@ -2,10 +2,10 @@ import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, Alert, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Plus, Share2, ShoppingBag, Trash2, ChevronDown, ChevronRight, Calendar, X } from 'lucide-react-native';
-import PlatformIcon from '../../components/PlatformIcon';
-import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '../../utils/shoppingListManager';
+import PlatformIcon from '@/components/PlatformIcon';
+import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '@/utils/shoppingListManager';
 import { useFocusEffect } from '@react-navigation/native';
-import i18n from '../../utils/i18n';
+import i18n from '@/utils/i18n';
 import { ShoppingList } from '@/types';
 
 export default function ShoppingScreen() {
@@ -43,7 +43,7 @@ export default function ShoppingScreen() {
     const ingredient = {
       name: newItem,
       amount: '',
-      category: 'Sonstiges'
+      category: 'other'
     };
     
     await addToShoppingList([ingredient], expandedList);
@@ -67,15 +67,15 @@ export default function ShoppingScreen() {
       }
     } else {
       Alert.alert(
-        i18n.t('shopping.deleteAllConfirmationTitle'),
-        i18n.t('shopping.deleteAllConfirmationMessage'),
+        i18n.t('common.deleteAllConfirmationTitle'),
+        i18n.t('common.deleteAllConfirmationMessage'),
         [
           {
-            text: i18n.t('shopping.cancel'),
+            text: i18n.t('common.cancel'),
             style: 'cancel'
           },
           {
-            text: i18n.t('shopping.delete'),
+            text: i18n.t('common.delete'),
             onPress: () => handleDeleteAllItems(listId),
             style: 'destructive'
           }
@@ -136,7 +136,7 @@ export default function ShoppingScreen() {
         >
           <View style={styles.listHeaderLeft}>
             <PlatformIcon icon={ShoppingBag} size={20} color="#FF6B35" style={styles.listIcon} />
-            <Text style={styles.listTitle}>{list.name}</Text>
+            <Text style={styles.listTitle}>{i18n.t('common.week')} {list.name}</Text>
           </View>
           <PlatformIcon 
             icon={isExpanded ? ChevronDown : ChevronRight} 
@@ -182,7 +182,7 @@ export default function ShoppingScreen() {
               
               return (
                 <View key={category.category} style={styles.categoryContainer}>
-                  <Text style={styles.categoryTitle}>{category.category}</Text>
+                  <Text style={styles.categoryTitle}>{i18n.t(`categories.${category.category}`)}</Text>
                   
                   {filteredItems.map((item: any) => (
                     <TouchableOpacity
@@ -341,7 +341,7 @@ export default function ShoppingScreen() {
                     styles.existingWeekText,
                     expandedList === list.id && styles.existingWeekTextActive
                   ]}>
-                    {list.name}
+                    {i18n.t('common.week')} {list.name}
                   </Text>
                 </TouchableOpacity>
               ))}

@@ -15,6 +15,7 @@ export default {
     success: "Success",
     error: "Error",
     week: "Week",
+    minutes: "minutes",
     days: {
       monday: "Monday",
       tuesday: "Tuesday",
@@ -111,6 +112,14 @@ export default {
     mexican: "Mexican",
     vegetarian: "Vegetarian",
     quick: "Quick",
+    fruitVegetables: "Fruit & Vegetables",
+    dairyProducts: "Dairy Products",
+    meatFish: "Meat & Fish",
+    grainProducts: "Grain Products",
+    spices: "Spices",
+    oilsVinegar: "Oils & Vinegar",
+    legumes: "Legumes",
+    other: "Other",
   },
   shopping:{
     title: "Shopping List",

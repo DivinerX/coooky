@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Plus, ChevronRight, Pencil, Trash2, ChevronDown, X, ChevronUp, TriangleAlert as AlertTriangle, ChefHat } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import PlatformIcon from '@/components/PlatformIcon';
-import { getWeekPlans, addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '@/utils/weekPlanManager';
+import { addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '@/utils/weekPlanManager';
 import { setCurrentRecipe } from '@/utils/recipeManager';
 import i18n from '@/utils/i18n';
 import { Recipe, WeekPlan } from '@/types';
@@ -27,8 +27,8 @@ export default function PlannerScreen() {
       const plans = await loadWeekPlans();
       setWeekPlans(plans);
       
-    // If there's a current week plan, expand it by default
-    if (plans.length > 0) {
+      // If there's a current week plan, expand it by default
+      if (plans.length > 0) {
         setExpandedWeek(plans[0].id);
       }
     };
@@ -55,7 +55,7 @@ export default function PlannerScreen() {
     }
   };
 
-  const handleMoveRecipe = () => {
+  const handleMoveRecipe = async () => {
     if (!selectedRecipe || !targetDay) return;
     
     const updatedPlans = [...weekPlans];
@@ -63,7 +63,7 @@ export default function PlannerScreen() {
     
     if (weekIndex !== -1) {
       // Move recipe in the week plan
-      moveRecipe(
+      await moveRecipe(
         expandedWeek,
         selectedDay,
         targetDay,
@@ -71,7 +71,7 @@ export default function PlannerScreen() {
       );
       
       // Update state with the new plans
-      const updatedWeekPlans = getWeekPlans();
+      const updatedWeekPlans = await loadWeekPlans();
       setWeekPlans(updatedWeekPlans);
     }
     
@@ -199,11 +199,14 @@ export default function PlannerScreen() {
     
     return (
       <View style={styles.dayContainer} key={`${weekId}-${day}`}>
-        <Text style={styles.dayTitle}>{day}</Text>
-        
+        <Text style={styles.dayTitle}>{i18n.t(`common.days.${day}`)}</Text>
         {hasRecipes ? (
           <View style={styles.recipesContainer}>
-            {dayRecipes.map(recipe => renderRecipeItem(weekId, day, recipe))}
+            {dayRecipes.map((recipe, index) => (
+              <View key={`${weekId}-${day}-${recipe.id}-${index}`}>
+                {renderRecipeItem(weekId, day, recipe)}
+              </View>
+            ))}
           </View>
         ) : (
           <TouchableOpacity style={styles.addMealButton}>
@@ -404,7 +407,7 @@ export default function PlannerScreen() {
             
             <View style={styles.moveOptionsContainer}>
               <Text style={styles.moveOptionLabel}>{i18n.t('plan.day')}:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daySelector}>
+              <View style={styles.daySelector}>
                 {Object.keys(weekPlans.find(week => week.id === expandedWeek)?.days || {}).map((day) => (
                   <TouchableOpacity 
                     key={day}
@@ -418,11 +421,11 @@ export default function PlannerScreen() {
                       styles.daySelectorText,
                       targetDay === day && styles.daySelectorTextActive
                     ]}>
-                      {day}
+                      {i18n.t(`common.days.${day}`)}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
             
             <TouchableOpacity 
@@ -472,7 +475,7 @@ export default function PlannerScreen() {
             <TouchableOpacity 
               style={styles.editButton}
               onPress={() => {
-                setCurrentRecipe(selectedRecipe);
+                setCurrentRecipe(selectedRecipe!);
                 setEditModalVisible(false);
                 router.push('/cook');
               }}
@@ -830,22 +833,25 @@ const styles = StyleSheet.create({
   },
   moveOptionsContainer: {
     marginBottom: 20,
+    width: '100%',
   },
   moveOptionLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#333',
     marginBottom: 10,
   },
   daySelector: {
-    marginBottom: 15,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    width: '100%',
   },
   daySelectorItem: {
     backgroundColor: '#F0F0F0',
-    borderRadius: 20,
     paddingVertical: 8,
-    paddingHorizontal: 15,
-    marginRight: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   daySelectorItemActive: {
     backgroundColor: '#FF6B35',
@@ -853,10 +859,10 @@ const styles = StyleSheet.create({
   daySelectorText: {
     fontSize: 14,
     color: '#333',
+    fontWeight: '500',
   },
   daySelectorTextActive: {
     color: '#FFF',
-    fontWeight: 'bold',
   },
   moveButton: {
     backgroundColor: '#FF6B35',

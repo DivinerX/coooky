@@ -8,7 +8,7 @@ import { checkIfCookingRelated, generateCookingSuggestions } from '@/utils/openA
 import { setCurrentRecipe } from '@/utils/recipeManager';
 import { Message, Recipe } from '@/types';
 import { ChatModal } from '@/components/ChatModal';
-import { addRecipesToWeekPlan, addNewWeekPlan, getWeekPlans } from '@/utils/weekPlanManager';
+import { addRecipesToWeekPlan, addNewWeekPlan, loadWeekPlans } from '@/utils/weekPlanManager';
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
 import i18n from '@/utils/i18n';
 
@@ -575,7 +575,7 @@ export default function MainScreen() {
 
   const handleAddToWeekPlan = async () => {
     // Create a new week plan if none exists
-    const weekPlans = getWeekPlans();
+    const weekPlans = await loadWeekPlans();
     let currentWeekPlan;
     
     if (weekPlans.length === 0) {

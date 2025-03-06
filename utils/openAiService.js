@@ -40,7 +40,6 @@ export const generateCookingSuggestions = async (preferences, recipeCount, porti
   try {
     const userPrefs = await loadUserPreferences();
     const language = getLanguage();
-    console.log('language', language);
     
     let systemPrompt = `You are a professional chef assistant specializing in creating delicious recipes in language ${language.name}.`;
     
@@ -79,7 +78,7 @@ Format the response as a structured JSON object with the following format:
   ]
 }
 
-For images, use appropriate food images from Unsplash with realistic URLs. Categorize ingredients in these categories: "Obst & Gemüse", "Milchprodukte", "Fleisch & Fisch", "Getreideprodukte", "Gewürze", "Öle & Essig", "Hülsenfrüchte", "Sonstiges".`;
+For images, use appropriate food images from Unsplash with realistic URLs. Categorize ingredients in these categories: "fruitVegetables", "dairyProducts", "meatFish", "grainProducts", "spices", "oilsVinegar", "legumes", "other".`;
     
     const response = await openai.chat.completions.create({
       model: "gpt-4-1106-preview",
@@ -124,7 +123,6 @@ export const analyzeUserPreferences = async (text) => {
     });
     
     const result = JSON.parse(response.choices[0].message.content);
-    console.log(result)
     return {
       habits: result.habits || [],
       favorites: result.favorites || [],

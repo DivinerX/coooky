@@ -3,6 +3,9 @@ import i18n from '@/utils/i18n';
 
 const WEEK_PLANS_KEY = 'week_plans';
 
+// Initialize week plans array
+let weekPlans = [];
+
 // Format date as "DD.MM.YYYY"
 const formatDate = (date) => {
   const day = date.getDate().toString().padStart(2, '0');
@@ -35,9 +38,6 @@ const getWeekRange = (date) => {
   };
 };
 
-// Initialize week plans array
-let weekPlans = [];
-
 // Load week plans from storage
 export const loadWeekPlans = async () => {
   try {
@@ -61,13 +61,10 @@ const saveWeekPlans = async () => {
   }
 };
 
-// Get all week plans
-export const getWeekPlans = () => {
-  return weekPlans;
-};
-
 // Add a new week plan for a specific week
 export const addNewWeekPlan = async (weeksAhead = 0) => {
+  await loadWeekPlans();
+  
   const today = new Date();
   const targetDate = new Date(today);
   targetDate.setDate(today.getDate() + (weeksAhead * 7));
@@ -86,18 +83,18 @@ export const addNewWeekPlan = async (weeksAhead = 0) => {
   
   const newPlan = {
     id: `week-${weekNumber}-${year}`,
-    name: `${i18n.t('common.week')} ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
+    name: `${weekNumber} (${weekRange.start} - ${weekRange.end})`,
     weekNumber,
     year,
     date: targetDate.toISOString(),
     days: {
-      'Montag': [],
-      'Dienstag': [],
-      'Mittwoch': [],
-      'Donnerstag': [],
-      'Freitag': [],
-      'Samstag': [],
-      'Sonntag': []
+      'monday': [],
+      'tuesday': [],
+      'wednesday': [],
+      'thursday': [],
+      'friday': [],
+      'saturday': [],
+      'sunday': []
     }
   };
   
@@ -108,7 +105,9 @@ export const addNewWeekPlan = async (weeksAhead = 0) => {
 };
 
 // Move a recipe from one day to another
-export const moveRecipe = (weekId, sourceDay, targetDay, recipe) => {
+export const moveRecipe = async (weekId, sourceDay, targetDay, recipe) => {
+  await loadWeekPlans();
+  
   const weekIndex = weekPlans.findIndex(plan => plan.id === weekId);
   
   if (weekIndex === -1) return false;
@@ -126,11 +125,16 @@ export const moveRecipe = (weekId, sourceDay, targetDay, recipe) => {
   // Add to target
   weekPlans[weekIndex].days[targetDay].push(recipeToMove);
   
+  // Save changes to storage
+  await saveWeekPlans();
+  
   return true;
 };
 
 // Delete a specific recipe from a day
 export const deleteRecipe = async (weekId, day, recipeId) => {
+  await loadWeekPlans();
+  
   const weekIndex = weekPlans.findIndex(plan => plan.id === weekId);
   
   if (weekIndex === -1) return false;
@@ -153,6 +157,8 @@ export const deleteRecipe = async (weekId, day, recipeId) => {
 
 // Add recipes to a week plan
 export const addRecipesToWeekPlan = async (weekId, recipes) => {
+  await loadWeekPlans();
+  
   const weekIndex = weekPlans.findIndex(plan => plan.id === weekId);
   
   if (weekIndex === -1) return false;
@@ -170,6 +176,3 @@ export const addRecipesToWeekPlan = async (weekId, recipes) => {
   await saveWeekPlans();
   return true;
 };
-
-// Initialize by loading saved data
-loadWeekPlans();

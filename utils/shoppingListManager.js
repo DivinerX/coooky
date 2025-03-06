@@ -88,7 +88,7 @@ export const addNewShoppingList = async (weeksAhead = 0) => {
   
   const newList = {
     id: `shopping-week-${weekNumber}-${year}`,
-    name: `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
+    name: `${weekNumber} (${weekRange.start} - ${weekRange.end})`,
     weekNumber,
     year,
     date: targetDate.toISOString(),
@@ -247,37 +247,6 @@ export const deleteItem = async (listId, categoryName, itemId) => {
       await saveShoppingLists();
     }
   }
-};
-
-// Get available weeks for selection
-export const getAvailableWeeks = () => {
-  const today = new Date();
-  const currentWeekNumber = getWeekNumber(today);
-  const currentYear = today.getFullYear();
-  
-  // Create an array of the next 4 weeks
-  const availableWeeks = [];
-  
-  for (let i = 0; i < 5; i++) {
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + (i * 7));
-    
-    const weekNumber = getWeekNumber(targetDate);
-    const year = targetDate.getFullYear();
-    const weekRange = getWeekRange(targetDate);
-    
-    availableWeeks.push({
-      id: `week-${weekNumber}-${year}`,
-      name: i === 0 ? `Diese Woche (${weekRange.start} - ${weekRange.end})` : 
-             i === 1 ? `Nächste Woche (${weekRange.start} - ${weekRange.end})` :
-             `Woche ${weekNumber} (${weekRange.start} - ${weekRange.end})`,
-      weekNumber,
-      year,
-      date: targetDate.toISOString()
-    });
-  }
-  
-  return availableWeeks;
 };
 
 // Initialize with empty shopping lists

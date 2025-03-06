@@ -63,7 +63,7 @@ export const ChatModal = ({
       setShowNavigateToShoppingList(true);
     } catch (error) {
       Alert.alert(
-        i18n.t('shopping.error'),
+        i18n.t('common.error'),
         i18n.t('shopping.ingredientsNotAdded')
       );
     }
@@ -143,7 +143,7 @@ export const ChatModal = ({
                   )}
                 </View>
 
-                {/* Show "Überrasch mich" option after first question */}
+                {/* Show "Surprise me" option after first question */}
                 {!message.isUser && message.showSurpriseMe && (
                   <TouchableOpacity
                     style={[
@@ -259,7 +259,7 @@ export const ChatModal = ({
                     <Image source={{ uri: recipe.image }} style={styles.recipeCardImage} />
                     <View style={styles.recipeCardContent}>
                       <Text style={styles.recipeCardTitle}>{recipe.title}</Text>
-                      <Text style={styles.recipeCardTime}>{recipe.time}</Text>
+                      <Text style={styles.recipeCardTime}>{recipe.time} {i18n.t('common.minutes')}</Text>
                       <Text style={styles.recipeCardPortions}>{recipe.servings} {i18n.t('chat.portions')}</Text>
                     </View>
                     <ChevronRight size={24} color="#DDD" />
@@ -271,15 +271,23 @@ export const ChatModal = ({
                   onPress={async () => {
                     try {
                       await addToWeekPlan();
-                      Alert.alert(
-                        i18n.t('common.success'),
-                        i18n.t('chat.recipesAddedToWeekPlan')
-                      );
+                      if (Platform.OS === 'web') {
+                        window.alert(i18n.t('chat.recipesAddedToWeekPlan'));
+                      } else {
+                        Alert.alert(
+                          i18n.t('common.success'),
+                          i18n.t('chat.recipesAddedToWeekPlan')
+                        );
+                      }
                     } catch (error) {
-                      Alert.alert(
-                        i18n.t('chat.error'),
-                        i18n.t('chat.recipesNotAddedToWeekPlan')
-                      );
+                      if (Platform.OS === 'web') {
+                        window.alert(i18n.t('chat.recipesNotAddedToWeekPlan'));
+                      } else {
+                        Alert.alert(
+                          i18n.t('common.error'),
+                          i18n.t('chat.recipesNotAddedToWeekPlan')
+                        );
+                      }
                     }
                   }}
                 >

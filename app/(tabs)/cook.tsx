@@ -5,7 +5,7 @@ import { Play, Pause, SkipBack, SkipForward, Minus, Plus, Clock, Calendar, Chevr
 import * as Speech from 'expo-speech';
 import PlatformIcon from '../../components/PlatformIcon';
 import { getAllRecipes, getCurrentRecipe, getRecipeById, setCurrentRecipe } from '../../utils/recipeManager';
-import { getWeekPlans } from '../../utils/weekPlanManager';
+import { loadWeekPlans } from '../../utils/weekPlanManager';
 import i18n from '@/utils/i18n';
 import { Recipe } from '@/types';
 
@@ -18,35 +18,48 @@ export default function CookScreen() {
   const [weekPlans, setWeekPlans] = useState([]);
   const [expandedWeek, setExpandedWeek] = useState(null);
   const [expandedDay, setExpandedDay] = useState(null);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
-    // Load the current recipe if available
-    const currentRecipe = getCurrentRecipe();
-    if (currentRecipe) {
-      // If the recipe doesn't have ingredients or steps, try to get the full recipe data
-      if (!currentRecipe.ingredients || !currentRecipe.steps) {
-        const fullRecipe = getRecipeById(currentRecipe.id);
-        if (fullRecipe) {
-          setRecipe(fullRecipe);
-          setServings(fullRecipe.servings || 2);
+    const loadInitialData = async () => {
+      try {
+        // Load the current recipe if available
+        const currentRecipe = await getCurrentRecipe();
+        if (currentRecipe) {
+          // If the recipe doesn't have ingredients or steps, try to get the full recipe data
+          if (!currentRecipe.ingredients || !currentRecipe.steps) {
+            const fullRecipe = await getRecipeById(currentRecipe.id);
+            if (fullRecipe) {
+              setRecipe(fullRecipe);
+              setServings(fullRecipe.servings || 2);
+            } else {
+              setRecipe(currentRecipe);
+            }
+          } else {
+            setRecipe(currentRecipe);
+            setServings(currentRecipe.servings || 2);
+          }
         } else {
-          setRecipe(currentRecipe);
+          // If no current recipe, show the recipe selection modal
+          setRecipeModalVisible(true);
         }
-      } else {
-        setRecipe(currentRecipe);
-        setServings(currentRecipe.servings || 2);
-      }
-    } else {
-      // If no current recipe, show the recipe selection modal
-      setRecipeModalVisible(true);
-    }
 
-    // Load week plans for recipe selection
-    const plans = getWeekPlans();
-    setWeekPlans(plans);
-    if (plans.length > 0) {
-      setExpandedWeek(plans[0].id);
-    }
+        // Load all recipes
+        const recipes = await getAllRecipes();
+        setAllRecipes(recipes);
+
+        // Load week plans for recipe selection
+        const plans = await loadWeekPlans();
+        setWeekPlans(plans);
+        if (plans.length > 0) {
+          setExpandedWeek(plans[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
+    };
+
+    loadInitialData();
 
     // Clean up speech when component unmounts
     return () => {
@@ -137,22 +150,26 @@ export default function CookScreen() {
     return amount;
   };
 
-  const selectRecipe = (selectedRecipe) => {
-    // Get the full recipe data if needed
-    const fullRecipe = getRecipeById(selectedRecipe.id);
-    if (fullRecipe) {
-      setRecipe(fullRecipe);
-      setServings(fullRecipe.servings || 2);
-      setCurrentRecipe(fullRecipe);
-    } else {
-      setRecipe(selectedRecipe);
-      setServings(selectedRecipe.servings || 2);
-      setCurrentRecipe(selectedRecipe);
+  const selectRecipe = async (selectedRecipe: Recipe) => {
+    try {
+      // Get the full recipe data if needed
+      const fullRecipe = await getRecipeById(selectedRecipe.id);
+      if (fullRecipe) {
+        setRecipe(fullRecipe);
+        setServings(fullRecipe.servings || 2);
+        await setCurrentRecipe(fullRecipe);
+      } else {
+        setRecipe(selectedRecipe);
+        setServings(selectedRecipe.servings || 2);
+        await setCurrentRecipe(selectedRecipe);
+      }
+      
+      setCurrentStep(0);
+      setIsPlaying(false);
+      setRecipeModalVisible(false);
+    } catch (error) {
+      console.error('Error selecting recipe:', error);
     }
-    
-    setCurrentStep(0);
-    setIsPlaying(false);
-    setRecipeModalVisible(false);
   };
 
   const toggleWeekExpansion = (weekId) => {
@@ -232,8 +249,6 @@ export default function CookScreen() {
   };
 
   const renderAllRecipes = () => {
-    const allRecipes = getAllRecipes();
-    
     return (
       <View style={styles.recipeListContainer}>
         <View style={styles.recipeListHeader}>
