@@ -13,8 +13,8 @@ declare global {
 
 export default function RootLayout() {
   useEffect(() => {
-    // Initialize language when the app starts
-    // initializeLanguage();
+    // Initialize language when the app starts.
+    initializeLanguage();
     
     if (Platform.OS === 'web') {
       window.frameworkReady?.();

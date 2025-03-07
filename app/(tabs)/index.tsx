@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mic, Calendar } from 'lucide-react-native';
@@ -10,21 +10,11 @@ import { Message, Recipe } from '@/types';
 import { ChatModal } from '@/components/ChatModal';
 import { addRecipesToWeekPlan, addNewWeekPlan, loadWeekPlans } from '@/utils/weekPlanManager';
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
-import i18n from '@/utils/i18n';
-
-// Define cuisine categories
-const CUISINE_CATEGORIES = [
-  { id: 'asian', name: i18n.t('categories.asian'), icon: '🍜' },
-  { id: 'italian', name: i18n.t('categories.italian'), icon: '🍝' },
-  { id: 'mediterranean', name: i18n.t('categories.mediterranean'), icon: '🥗' },
-  { id: 'german', name: i18n.t('categories.german'), icon: '🥨' },
-  { id: 'mexican', name: i18n.t('categories.mexican'), icon: '🌮' },
-  { id: 'vegetarian', name: i18n.t('categories.vegetarian'), icon: '🥦' },
-  { id: 'quick', name: i18n.t('categories.quick'), icon: '⏱️' }
-];
+import i18n, { onLanguageChange } from '@/utils/i18n';
 
 export default function MainScreen() {
   const router = useRouter();
+  const [forceUpdate, setForceUpdate] = useState(0);
   const [chatModalVisible, setChatModalVisible] = useState<boolean>(false);
   const [isWeeklyPlanning, setIsWeeklyPlanning] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<string>('');
@@ -37,6 +27,18 @@ export default function MainScreen() {
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState<boolean>(false);
   const [conversationStage, setConversationStage] = useState<'initial' | 'preferences' | 'recipe_request' | 'recipe_count' | 'servings' | 'generating'>('initial');
   const scrollViewRef = useRef<ScrollView | null>(null);
+
+  const forceRender = useCallback(() => {
+    setForceUpdate(prev => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onLanguageChange(() => {
+      forceRender();
+    });
+
+    return () => unsubscribe();
+  }, [forceRender]);
 
   useEffect(() => {
     // Keep the scroll behavior
@@ -107,6 +109,24 @@ export default function MainScreen() {
 
     // First check if we have user preferences
     const existingPrefs = await loadUserPreferences();
+
+    // For recipe_request stage, check if the message is cooking-related
+    if (conversationStage === 'recipe_request') {
+      try {
+        const cookingCheck = await checkIfCookingRelated(message);
+        if (!cookingCheck.isCookingRelated) {
+          const notCookingMessage: Message = {
+            id: Date.now().toString(),
+            text: cookingCheck.message,
+            isUser: false
+          };
+          setMessages(prev => [...prev, notCookingMessage]);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking cooking relation:', error);
+      }
+    }
 
     switch (conversationStage) {
       case 'initial':
@@ -600,8 +620,18 @@ export default function MainScreen() {
     }
   };
 
+  const CUISINE_CATEGORIES = [
+    { id: 'asian', name: i18n.t('categories.asian'), icon: '🍜' },
+    { id: 'italian', name: i18n.t('categories.italian'), icon: '🍝' },
+    { id: 'mediterranean', name: i18n.t('categories.mediterranean'), icon: '🥗' },
+    { id: 'german', name: i18n.t('categories.german'), icon: '🥨' },
+    { id: 'mexican', name: i18n.t('categories.mexican'), icon: '🌮' },
+    { id: 'vegetarian', name: i18n.t('categories.vegetarian'), icon: '🥦' },
+    { id: 'quick', name: i18n.t('categories.quick'), icon: '⏱️' }
+  ];
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} key={forceUpdate}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <Text style={styles.greeting}>{i18n.t('common.greeting')}</Text>

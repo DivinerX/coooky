@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Play, Pause, SkipBack, SkipForward, Minus, Plus, Clock, Calendar, ChevronRight, X } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
 import PlatformIcon from '@/components/PlatformIcon';
-import { getAllRecipes, getCurrentRecipe, getSyncCurrentRecipe, getRecipeById, setCurrentRecipe } from '@/utils/recipeManager';
+import { getAllRecipes, getCurrentRecipe, getRecipeById, setCurrentRecipe } from '@/utils/recipeManager';
 import { loadWeekPlans } from '@/utils/weekPlanManager';
 import i18n from '@/utils/i18n';
-import { Recipe } from '@/types';
+import { Recipe, WeekPlan } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 
@@ -17,9 +17,9 @@ export default function CookScreen() {
   const [servings, setServings] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recipeModalVisible, setRecipeModalVisible] = useState(false);
-  const [weekPlans, setWeekPlans] = useState([]);
-  const [expandedWeek, setExpandedWeek] = useState(null);
-  const [expandedDay, setExpandedDay] = useState(null);
+  const [weekPlans, setWeekPlans] = useState<WeekPlan[]>([]);
+  const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
   useFocusEffect(
@@ -139,7 +139,7 @@ export default function CookScreen() {
   };
 
   // Calculate adjusted ingredient amounts based on servings
-  const getAdjustedAmount = (amount) => {
+  const getAdjustedAmount = (amount: string) => {
     if (!recipe || !recipe.servings) return amount;
     
     if (amount.includes('g')) {
@@ -177,12 +177,12 @@ export default function CookScreen() {
     }
   };
 
-  const toggleWeekExpansion = (weekId) => {
+  const toggleWeekExpansion = (weekId : string) => {
     setExpandedWeek(expandedWeek === weekId ? null : weekId);
     setExpandedDay(null);
   };
 
-  const toggleDayExpansion = (day) => {
+  const toggleDayExpansion = (day: string) => {
     setExpandedDay(expandedDay === day ? null : day);
   };
 

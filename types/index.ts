@@ -18,6 +18,7 @@ export interface Recipe {
   time: string;
   servings: number;
   ingredients: any[];
+  steps: string[];
 }
 
 export interface ShoppingList {

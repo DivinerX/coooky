@@ -7,9 +7,6 @@ import PreferencesScreen from '../../components/preferences';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [voiceGuide, setVoiceGuide] = useState(true);
   const [preferencesVisible, setPreferencesVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.locale);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
@@ -47,34 +44,10 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileIcon}>
-            <User size={30} color="#FFF" />
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Max Mustermann</Text>
-            <Text style={styles.profileEmail}>max.mustermann@example.com</Text>
-          </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>{i18n.t('settings.edit')}</Text>
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{i18n.t('settings.general')}</Text>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Bell size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>{i18n.t('settings.notifications')}</Text>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: '#DDD', true: '#FF6B35' }}
-              thumbColor="#FFF"
-            />
-          </View>
           
           <TouchableOpacity 
             style={styles.settingItem}
@@ -92,29 +65,6 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{i18n.t('settings.appSettings')}</Text>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>{i18n.t('settings.darkMode')}</Text>
-            </View>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: '#DDD', true: '#FF6B35' }}
-              thumbColor="#FFF"
-            />
-          </View>
-          
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingText}>{i18n.t('settings.voiceGuide')}</Text>
-            </View>
-            <Switch
-              value={voiceGuide}
-              onValueChange={setVoiceGuide}
-              trackColor={{ false: '#DDD', true: '#FF6B35' }}
-              thumbColor="#FFF"
-            />
-          </View>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
@@ -134,15 +84,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{i18n.t('settings.helpSupport')}</Text>
-          
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <HelpCircle size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>{i18n.t('settings.faq')}</Text>
-            </View>
-            <ChevronRight size={20} color="#CCC" />
-          </TouchableOpacity>
-          
+         
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingText}>{i18n.t('settings.contact')}</Text>
@@ -164,11 +106,6 @@ export default function SettingsScreen() {
             <ChevronRight size={20} color="#CCC" />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.logoutButton}>
-          <LogOut size={20} color="#FF3B30" />
-          <Text style={styles.logoutText}>{i18n.t('settings.logout')}</Text>
-        </TouchableOpacity>
 
         <Text style={styles.versionText}>{i18n.t('settings.version')}</Text>
       </ScrollView>
@@ -235,46 +172,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 20,
-    marginBottom: 20,
-  },
-  profileIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FF6B35',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: '#666',
-  },
-  editButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FF6B35',
-  },
-  editButtonText: {
-    fontSize: 14,
-    color: '#FF6B35',
-  },
   section: {
     backgroundColor: '#FFF',
     borderRadius: 10,
@@ -316,21 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginRight: 10,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-  },
-  logoutText: {
-    fontSize: 16,
-    color: '#FF3B30',
-    marginLeft: 10,
-    fontWeight: 'bold',
   },
   versionText: {
     textAlign: 'center',

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, Alert, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Check, Plus, Share2, ShoppingBag, Trash2, ChevronDown, ChevronRight, Calendar, X } from 'lucide-react-native';
+import { Check, Plus, ShoppingBag, Trash2, ChevronDown, ChevronRight, Calendar, X } from 'lucide-react-native';
 import PlatformIcon from '@/components/PlatformIcon';
 import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '@/utils/shoppingListManager';
 import { useFocusEffect } from '@react-navigation/native';
@@ -152,11 +152,6 @@ export default function ShoppingScreen() {
                 <Text style={styles.actionButtonText}>
                   {showChecked ? i18n.t('shopping.hideCompleted') : i18n.t('shopping.showCompleted')}
                 </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.shareButton}>
-                <PlatformIcon icon={Share2} size={16} color="#666" />
-                <Text style={styles.shareButtonText}>{i18n.t('shopping.share')}</Text>
               </TouchableOpacity>
             </View>
             

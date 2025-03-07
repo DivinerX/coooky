@@ -12,12 +12,13 @@ let openai = new OpenAI({
 // Check if query is cooking-related using AI
 export const checkIfCookingRelated = async (text) => {
   try {
+    const language = getLanguage();
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo-1106",
       messages: [
         {
           role: "system",
-          content: "You are a cooking topic validator. Your only job is to determine if a query is cooking-related or not. Respond with a JSON object containing a boolean 'isCookingRelated' field and a 'message' field. For non-cooking queries, provide a polite response in German explaining that you can only help with cooking-related topics. The tone should be friendly and helpful."
+          content: `You are a cooking topic validator. Your only job is to determine if a query is cooking-related or not. Respond with a JSON object containing a boolean 'isCookingRelated' field and a 'message' field. For non-cooking queries, provide a polite response in ${language.name} explaining that you can only help with cooking-related topics. The tone should be friendly and helpful.`
         },
         {
           role: "user",

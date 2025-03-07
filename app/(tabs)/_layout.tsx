@@ -1,10 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { House, ChefHat, Calendar, ShoppingCart, Settings } from 'lucide-react-native';
-import PlatformIcon from '../../components/PlatformIcon';
-import i18n from '../../utils/i18n';
+import PlatformIcon from '@/components/PlatformIcon';
+import i18n, { onLanguageChange } from '@/utils/i18n';
+import { useEffect, useState } from 'react';
 
 export default function TabLayout() {
+  const [, setLanguageUpdate] = useState(0);
+
+  useEffect(() => {
+    // Subscribe to language changes
+    const unsubscribe = onLanguageChange(() => {
+      // Force re-render by updating state
+      setLanguageUpdate(prev => prev + 1);
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
