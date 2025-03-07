@@ -83,7 +83,7 @@ export const addNewWeekPlan = async (weeksAhead = 0) => {
   
   const newPlan = {
     id: `week-${weekNumber}-${year}`,
-    name: `${weekNumber} (${weekRange.start} - ${weekRange.end})`,
+    name: `${weekNumber}`,
     weekNumber,
     year,
     date: targetDate.toISOString(),

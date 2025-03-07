@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadUserPreferences, saveUserPreferences } from '@/utils/userPreferencesManager';
 import { ChevronLeft, Plus, X } from 'lucide-react-native';
 import PlatformIcon from '@/components/PlatformIcon';
+import i18n from '@/utils/i18n';
 
 interface PreferencesScreenProps {
   onClose: () => void;
@@ -15,28 +16,6 @@ interface PreferencesGroup {
   placeholder: string;
 }
 
-const GROUPS: PreferencesGroup[] = [
-  {
-    title: 'Ernährungsgewohnheiten',
-    key: 'habits',
-    placeholder: 'z.B. vegetarisch, vegan...',
-  },
-  {
-    title: 'Lieblingsessen',
-    key: 'favorites',
-    placeholder: 'z.B. Pasta, Reis...',
-  },
-  {
-    title: 'Allergien',
-    key: 'allergies',
-    placeholder: 'z.B. Nüsse, Gluten...',
-  },
-  {
-    title: 'Bevorzugte Küchen',
-    key: 'trends',
-    placeholder: 'z.B. Asiatisch, Italienisch...',
-  },
-];
 
 export default function PreferencesScreen({ onClose }: PreferencesScreenProps) {
   const [preferences, setPreferences] = useState<{[key: string]: string[]}>({
@@ -52,6 +31,29 @@ export default function PreferencesScreen({ onClose }: PreferencesScreenProps) {
     trends: '',
   });
 
+  const GROUPS: PreferencesGroup[] = [
+    {
+      title: i18n.t('settings.habits'),
+      key: 'habits',
+      placeholder: i18n.t('settings.habitsPlaceholder'),
+    },
+    {
+      title: i18n.t('settings.favorites'),
+      key: 'favorites',
+      placeholder: i18n.t('settings.favoritesPlaceholder'),
+    },
+    {
+      title: i18n.t('settings.allergies'),
+      key: 'allergies',
+      placeholder: i18n.t('settings.allergiesPlaceholder'),
+    },
+    {
+      title: i18n.t('settings.trends'),
+      key: 'trends',
+      placeholder: i18n.t('settings.trendsPlaceholder'),
+    },
+  ];
+  
   useEffect(() => {
     loadCurrentPreferences();
   }, []);
@@ -94,7 +96,7 @@ export default function PreferencesScreen({ onClose }: PreferencesScreenProps) {
         <TouchableOpacity onPress={onClose} style={styles.backButton}>
           <ChevronLeft size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Ernährungspräferenzen</Text>
+        <Text style={styles.title}>{i18n.t('settings.nutritionalPreferences')}</Text>
       </View>
 
       <ScrollView style={styles.content}>

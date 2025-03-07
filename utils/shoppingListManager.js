@@ -88,7 +88,7 @@ export const addNewShoppingList = async (weeksAhead = 0) => {
   
   const newList = {
     id: `shopping-week-${weekNumber}-${year}`,
-    name: `${weekNumber} (${weekRange.start} - ${weekRange.end})`,
+    name: `${weekNumber}`,
     weekNumber,
     year,
     date: targetDate.toISOString(),

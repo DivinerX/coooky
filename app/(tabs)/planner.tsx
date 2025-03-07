@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Plus, ChevronRight, Pencil, Trash2, ChevronDown, X, ChevronUp, TriangleAlert as AlertTriangle, ChefHat } from 'lucide-react-native';
@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import PlatformIcon from '@/components/PlatformIcon';
 import { addNewWeekPlan, moveRecipe, deleteRecipe, loadWeekPlans } from '@/utils/weekPlanManager';
 import { setCurrentRecipe } from '@/utils/recipeManager';
-import i18n from '@/utils/i18n';
+import i18n, { onLanguageChange } from '@/utils/i18n';
 import { Recipe, WeekPlan } from '@/types';
 export default function PlannerScreen() {
   const router = useRouter();
@@ -20,7 +20,17 @@ export default function PlannerScreen() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [targetDay, setTargetDay] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+  const [, forceUpdate] = useState(0);
+
+  // Add language change subscription
+  useEffect(() => {
+    const unsubscribe = onLanguageChange(() => {
+      forceUpdate(prev => prev + 1);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     // Load week plans when component mounts
     const initWeekPlans = async () => {
@@ -248,7 +258,10 @@ export default function PlannerScreen() {
               renderDayRecipes(weekPlan.id, day)
             ))}
             
-            <TouchableOpacity style={styles.generateButton}>
+            <TouchableOpacity 
+              style={styles.generateButton}
+              onPress={() => router.push('/')}
+            >
               <Text style={styles.generateButtonText}>{i18n.t('plan.generateSuggestions')}</Text>
             </TouchableOpacity>
             

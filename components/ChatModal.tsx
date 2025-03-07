@@ -56,6 +56,7 @@ export const ChatModal = ({
   const [selectedCount, setSelectedCount] = useState<number | null>(null);
   const [selectedServingCount, setSelectedServingCount] = useState<number | 'custom' | null>(null);
   const [surpriseMeClicked, setSurpriseMeClicked] = useState(false);
+  const [weekPlanButtonClicked, setWeekPlanButtonClicked] = useState(false);
 
   const handleAddToShoppingList = async () => {
     try {
@@ -267,10 +268,14 @@ export const ChatModal = ({
                 ))}
 
                 <TouchableOpacity
-                  style={styles.addToWeekPlanButton}
+                  style={[
+                    styles.addToWeekPlanButton,
+                    weekPlanButtonClicked && styles.buttonDisabled
+                  ]}
                   onPress={async () => {
                     try {
                       await addToWeekPlan();
+                      setWeekPlanButtonClicked(true);
                       if (Platform.OS === 'web') {
                         window.alert(i18n.t('chat.recipesAddedToWeekPlan'));
                       } else {
@@ -290,8 +295,12 @@ export const ChatModal = ({
                       }
                     }
                   }}
+                  disabled={weekPlanButtonClicked}
                 >
-                  <Text style={styles.addToWeekPlanButtonText}>
+                  <Text style={[
+                    styles.addToWeekPlanButtonText,
+                    weekPlanButtonClicked && styles.buttonTextDisabled
+                  ]}>
                     {i18n.t('chat.addToWeekPlan')}
                   </Text>
                 </TouchableOpacity>
@@ -508,7 +517,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
   },
   buttonDisabled: {
+    opacity: 0.5,
     backgroundColor: '#CCC',
+  },
+  buttonTextDisabled: {
+    color: '#666',
   },
   generatedRecipesContainer: {
     marginTop: 10,

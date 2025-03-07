@@ -74,6 +74,7 @@ export default function MainScreen() {
         i18n.t('chat.initialMessage') :
         i18n.t('chat.recipeRequestMessage'),
       isUser: false,
+      // showSurpriseMe: true
       showSurpriseMe: userPrefs !== null // Remove isWeeklyPlanning condition
     };
 

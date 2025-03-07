@@ -10,6 +10,7 @@ export default {
     deleteAllConfirmationMessage: "Are you sure you want to delete?",
     deleteAllConfirmationTitle: "Delete All Items",
     cancel: "Cancel",
+    delete: "Delete",
     move: "Move",
     ok: "OK",
     success: "Success",
@@ -157,5 +158,13 @@ export default {
     logout: "Logout",
     version: "Version 1.0.0",
     selectLanguage: "Select Language",
+    habits: "Dietary Habits",
+    favorites: "Favorite Foods",
+    allergies: "Allergies",
+    trends: "Preferred Cuisines",
+    habitsPlaceholder: "e.g. vegetarian, vegan...",
+    favoritesPlaceholder: "e.g. pasta, rice...",
+    allergiesPlaceholder: "e.g. nuts, gluten...",
+    trendsPlaceholder: "e.g. Asian, Italian...",
   }
 };

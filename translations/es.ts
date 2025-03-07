@@ -6,6 +6,7 @@ export default {
     weeklyPlanning: "Planificación semanal",
     surpriseMe: "Sorprendeme",
     cancel: "Cancelar",
+    delete: "Eliminar",
     move: "Mover",
     ok: "OK",
     success: "Éxito",
@@ -148,5 +149,13 @@ export default {
     logout: "Cerrar sesión",
     version: "Versión 1.0.0",
     selectLanguage: "Seleccionar idioma",
+    habits: "Hábitos dietéticos",
+    favorites: "Comidas favoritas",
+    allergies: "Alergias",
+    trends: "Cocinas preferidas",
+    habitsPlaceholder: "p. ej. vegetariano, vegano...",
+    favoritesPlaceholder: "p. ej. pasta, arroz...",
+    allergiesPlaceholder: "p. ej. nueces, gluten...",
+    trendsPlaceholder: "p. ej. asiático, italiano...",
   }
 };

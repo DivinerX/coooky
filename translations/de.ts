@@ -2,7 +2,7 @@ export default {
   common: {
     greeting: "Hallo!",
     whatToCook: "Was möchten Sie heute kochen?",
-    singleRecipe: "Einzeln Rezept",
+    singleRecipe: "Einzelnes Rezept",
     weeklyPlanning: "Wochenplan",
     surpriseMe: "Überrasche mich",
     deleteItemConfirmationTitle: "Element löschen",
@@ -10,10 +10,11 @@ export default {
     deleteAllConfirmationMessage: "Sind Sie sicher, dass Sie alles löschen möchten?",
     deleteAllConfirmationTitle: "Alle Elemente löschen",
     cancel: "Abbrechen",
+    delete: "Löschen",
     move: "Verschieben",
     ok: "OK",
-    success: "Success",
-    error: "Error",
+    success: "Erfolg",
+    error: "Fehler",
     week: "Woche",
     minutes: "minuten",
     days: {
@@ -29,7 +30,7 @@ export default {
   tabs: {
     discover: "Entdecken",
     cook: "Kochen",
-    planner: "Planner",
+    planner: "Planer",
     shopping: "Einkaufen",
     settings: "Einstellungen",
   },
@@ -72,11 +73,11 @@ export default {
     initialMessage: "Bevor wir beginnen, haben Sie irgendwelche besonderen Ernährungsanforderungen oder Allergien, die ich berücksichtigen sollte?",
     writeMessage: "Schreiben Sie eine Nachricht...",
     analyzingPreferences: "Prüfen von Präferenzen",
-    recipeRequestMessage: "What do we want to cook? What do you like?",
+    recipeRequestMessage: "Was wollen wir kochen? Was magst du?",
     surpriseMe: "Überrasche mich",
-    servingsMessage: "How many portions would you like per recipe?",
+    servingsMessage: "Wie viele Portionen möchten Sie pro Rezept?",
     recipeCountMessage: "Wie viele Rezepte möchten Sie generieren?",
-    custom: "Custom",
+    custom: "Benutzerdefiniert",
     servingMessage: "Ich plan mit {{servings}} Portionen pro Rezept und erstelle {{recipeCount}} passende Rezepte für Sie...",
     progress: {
       startRecipeSearch: "Rezeitsuche starten...",
@@ -99,10 +100,10 @@ export default {
     addToShoppingList: "Zur Einkaufsliste hinzufügen",
     addToWeekPlan: "Zum Wochenplan hinzufügen",
     shoppingList: "Einkaufsliste",
-    shoppingListUpdated: "Shopping List Updated",
-    errorAddingToShoppingList: "Error adding to shopping list",
-    recipesAddedToWeekPlan: "Recipes added to week plain",
-    recipesNotAddedToWeekPlan: "Recipes not added to week plan"
+    shoppingListUpdated: "Einkaufsliste aktualisiert",
+    errorAddingToShoppingList: "Fehler beim Hinzufügen zur Einkaufsliste",
+    recipesAddedToWeekPlan: "Rezepte hinzugefügt zum Wochenplan",
+    recipesNotAddedToWeekPlan: "Rezepte nicht hinzugefügt zum Wochenplan"
   },
   categories: {
     asian: "Asiatisch",
@@ -137,7 +138,7 @@ export default {
     addItemPlaceholder: "Artikel hinzufügen...",
     deleteAll: "Alle löschen",
     noLists: "Keine Einkaufslisten gefunden. Erstellen Sie eine neue Einkaufsliste oder fügen Sie Artikel zu Ihrer Einkaufsliste hinzu.",
-    ingredientsNotAdded: "Ingredients not added to shopping list",
+    ingredientsNotAdded: "Zutaten nicht zur Einkaufsliste hinzugefügt",
   },
   settings: {
     title: "Einstellungen",
@@ -157,5 +158,13 @@ export default {
     logout: "Abmelden",
     version: "Version 1.0.0",
     selectLanguage: "Sprache auswählen",
+    habits: "Lebensmittelgewohnheiten",
+    favorites: "Lieblingsessen",
+    allergies: "Allergien",
+    trends: "Bevorzugte Küchen",
+    habitsPlaceholder: "z.B. vegetarisch, vegan...",
+    favoritesPlaceholder: "z.B. Pasta, Reis...",
+    allergiesPlaceholder: "z.B. Nüsse, Gluten...",
+    trendsPlaceholder: "z.B. Asiatisch, Italienisch...",
   }
 };

@@ -18,7 +18,15 @@ export const checkIfCookingRelated = async (text) => {
       messages: [
         {
           role: "system",
-          content: `You are a cooking topic validator. Your only job is to determine if a query is cooking-related or not. Respond with a JSON object containing a boolean 'isCookingRelated' field and a 'message' field. For non-cooking queries, provide a polite response in ${language.name} explaining that you can only help with cooking-related topics. The tone should be friendly and helpful.`
+          content: `You are a cooking topic validator. Your job is to determine if a query is cooking-related or not. Respond with a JSON object containing a boolean 'isCookingRelated' field and a 'message' field. 
+
+Consider these as cooking-related:
+- Direct cooking queries
+- Hesitating responses like "I'm not sure", "surprise me", "whatever"
+- General food preferences
+- Uncertain or open-ended food-related responses
+
+For clearly non-cooking queries (like weather, sports, or technical questions), provide a polite response in ${language.name} explaining that you can only help with cooking-related topics. The tone should be friendly and helpful.`
         },
         {
           role: "user",
@@ -61,6 +69,12 @@ For each recipe, please provide:
 3. Servings (${portionsPerRecipe} portions)
 4. A list of all ingredients with exact quantities for ${portionsPerRecipe} portions
 5. Step-by-step cooking instructions
+
+If the user's query indicates uncertainty (e.g., contains phrases like "not sure", "whatever", "surprise me", or is vague), generate random recipes with these guidelines (in addition to the above):
+- Mix different cuisine types (e.g., Italian, Asian, Mediterranean)
+- Include a variety of main ingredients (e.g., different proteins, vegetarian options)
+- Keep recipes relatively simple and approachable
+- Focus on popular, well-liked dishes
 
 Format the response as a structured JSON object with the following format:
 {
