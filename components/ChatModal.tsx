@@ -3,7 +3,7 @@ import { Mic, Send, X, ShoppingCart, ChevronRight } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { Message } from '@/types';
 import { AnimatedGeneratingMessage } from './AnimatedGeneratingMessage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import i18n from '@/utils/i18n';
 import React from 'react';
 
@@ -57,6 +57,10 @@ export const ChatModal = ({
   const [selectedServingCount, setSelectedServingCount] = useState<number | 'custom' | null>(null);
   const [surpriseMeClicked, setSurpriseMeClicked] = useState(false);
   const [weekPlanButtonClicked, setWeekPlanButtonClicked] = useState(false);
+
+  useEffect(() => {
+    setSurpriseMeClicked(false);
+  }, [chatModalVisible]);
 
   const handleAddToShoppingList = async () => {
     try {
@@ -238,7 +242,7 @@ export const ChatModal = ({
                         selectedServingCount === 'custom' && styles.optionTextSelected,
                         selectedServingCount !== null && selectedServingCount !== 'custom' && styles.optionTextDisabled
                       ]}>
-                        {i18n.t('chat.custom')}
+                        {i18n.t('common.custom')}
                       </Text>
                     </TouchableOpacity>
                   </View>

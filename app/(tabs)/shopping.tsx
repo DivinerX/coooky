@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatLi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Plus, ShoppingBag, Trash2, ChevronDown, ChevronRight, Calendar, X } from 'lucide-react-native';
 import PlatformIcon from '@/components/PlatformIcon';
-import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem } from '@/utils/shoppingListManager';
+import { getShoppingLists, addNewShoppingList, deleteAllItems, toggleItemCheck, addToShoppingList, deleteItem, moveItemToCategory } from '@/utils/shoppingListManager';
 import { useFocusEffect } from '@react-navigation/native';
 import i18n from '@/utils/i18n';
 import { ShoppingList } from '@/types';
@@ -14,6 +14,8 @@ export default function ShoppingScreen() {
   const [showChecked, setShowChecked] = useState(true);
   const [expandedList, setExpandedList] = useState<string | null>(null);
   const [weekSelectorVisible, setWeekSelectorVisible] = useState(false);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   
   useFocusEffect(
     useCallback(() => {
@@ -184,6 +186,12 @@ export default function ShoppingScreen() {
                       key={item.id}
                       style={styles.itemRow}
                       onPress={() => handleToggleItemCheck(list.id, category.category, item.id)}
+                      onLongPress={() => {
+                        // Show category selection modal
+                        setSelectedItem({ listId: list.id, categoryName: category.category, item });
+                        setCategoryModalVisible(true);
+                      }}
+                      delayLongPress={200}
                     >
                       <View style={styles.checkboxContainer}>
                         <View style={[
@@ -337,6 +345,58 @@ export default function ShoppingScreen() {
                     expandedList === list.id && styles.existingWeekTextActive
                   ]}>
                     {i18n.t('common.week')} {list.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Category Selection Modal */}
+      <Modal
+        visible={categoryModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setCategoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{i18n.t('shopping.selectCategory')}</Text>
+              <TouchableOpacity onPress={() => setCategoryModalVisible(false)}>
+                <PlatformIcon icon={X} size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.categoryList}>
+              {['fruitVegetables', 'dairyProducts', 'meatFish', 'grainProducts', 'spices', 'oilsVinegar', 'legumes', 'other'].map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryOption,
+                    selectedItem?.categoryName === cat && styles.categoryOptionSelected
+                  ]}
+                  onPress={async () => {
+                    if (selectedItem) {
+                      // Move item to new category
+                      await moveItemToCategory(
+                        selectedItem.listId,
+                        selectedItem.categoryName,
+                        selectedItem.item.id,
+                        cat
+                      );
+                      await loadShoppingLists();
+                      setCategoryModalVisible(false);
+                      setSelectedItem(null);
+                    }
+                  }}
+                >
+                  <Text style={[
+                    styles.categoryOptionText,
+                    selectedItem?.categoryName === cat && styles.categoryOptionTextSelected
+                  ]}>
+                    {i18n.t(`categories.${cat}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -632,5 +692,23 @@ const styles = StyleSheet.create({
   existingWeekTextActive: {
     color: '#FFF',
     fontWeight: 'bold',
+  },
+  categoryList: {
+    maxHeight: 400,
+  },
+  categoryOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  categoryOptionSelected: {
+    backgroundColor: '#F0F0F0',
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  categoryOptionTextSelected: {
+    color: '#FF6B35',
   },
 });

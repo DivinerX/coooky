@@ -17,6 +17,7 @@ export default {
     error: "Fehler",
     week: "Woche",
     minutes: "minuten",
+    custom: "Benutzerdefiniert",
     days: {
       monday: "Montag",
       tuesday: "Dienstag",
@@ -77,7 +78,6 @@ export default {
     surpriseMe: "Überrasche mich",
     servingsMessage: "Wie viele Portionen möchten Sie pro Rezept?",
     recipeCountMessage: "Wie viele Rezepte möchten Sie generieren?",
-    custom: "Benutzerdefiniert",
     servingMessage: "Ich plan mit {{servings}} Portionen pro Rezept und erstelle {{recipeCount}} passende Rezepte für Sie...",
     progress: {
       startRecipeSearch: "Rezeitsuche starten...",
@@ -93,6 +93,7 @@ export default {
     },
     soupBurnt: "Oops! Die Suppe ist verbrannt..",
     errorGeneratingRecipes: "Es gab einen Fehler beim Generieren der Rezepte: {{error.message || 'Unbekannter Fehler'}}. Bitte versuchen Sie es später erneut.",
+    errorProcessingPreferences: "Es gab einen Fehler beim Verarbeiten Ihrer Präferenzen. Bitte versuchen Sie es später erneut.",
     surpriseMeMessage: "Ich werde Ihnen mit {{cuisine}} {{icon}} Rezepte überraschen! Wie viele Rezepte soll ich vorschlagen?",
     portions: "Portionen",
     generatedRecipes: "Generierte Rezepte",
@@ -103,7 +104,11 @@ export default {
     shoppingListUpdated: "Einkaufsliste aktualisiert",
     errorAddingToShoppingList: "Fehler beim Hinzufügen zur Einkaufsliste",
     recipesAddedToWeekPlan: "Rezepte hinzugefügt zum Wochenplan",
-    recipesNotAddedToWeekPlan: "Rezepte nicht hinzugefügt zum Wochenplan"
+    recipesNotAddedToWeekPlan: "Rezepte nicht hinzugefügt zum Wochenplan",
+    preferencesSaved: "Präferenzen gespeichert",
+    attentionAllergies: "Ich werde besonderer Beachtung bei diesen Allergien schenken",
+    customServingsPrompt: "Bitte geben Sie die Anzahl der Portionen ein (1-20):",
+    invalidServings: "Bitte geben Sie eine gültige Zahl zwischen 1 und 20 ein.",
   },
   categories: {
     asian: "Asiatisch",
@@ -139,6 +144,7 @@ export default {
     deleteAll: "Alle löschen",
     noLists: "Keine Einkaufslisten gefunden. Erstellen Sie eine neue Einkaufsliste oder fügen Sie Artikel zu Ihrer Einkaufsliste hinzu.",
     ingredientsNotAdded: "Zutaten nicht zur Einkaufsliste hinzugefügt",
+    selectCategory: "Kategorie auswählen",
   },
   settings: {
     title: "Einstellungen",

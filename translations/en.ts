@@ -17,6 +17,7 @@ export default {
     error: "Error",
     week: "Week",
     minutes: "minutes",
+    custom: "Custom",
     days: {
       monday: "Monday",
       tuesday: "Tuesday",
@@ -77,7 +78,6 @@ export default {
     surpriseMe: "Surprise me",
     servingsMessage: "How many portions would you like per recipe?",
     recipeCountMessage: "How many recipes would you like to generate?",
-    custom: "Custom",
     servingMessage: "I plan with {{servings}} servings per recipe and create {{recipeCount}} suitable recipes for you...",
     progress: {
       startRecipeSearch: "Starting recipe search...",
@@ -93,6 +93,7 @@ export default {
     },
     soupBurnt: "Oops! The soup is burnt..",
     errorGeneratingRecipes: "There was a problem generating the recipes: {{error.message || 'Unknown error'}}. Please try again later.",
+    errorProcessingPreferences: "There was a problem processing your preferences. Please try again later.",
     surpriseMeMessage: "I'll surprise you with {{cuisine}} {{icon}} recipes! How many recipes should I suggest?",
     portions: "Portions",
     generatedRecipes: "Generated recipes",
@@ -103,7 +104,11 @@ export default {
     shoppingListUpdated: "Shopping List Updated",
     errorAddingToShoppingList: "Error adding to shopping list",
     recipesAddedToWeekPlan: "Recipes added to week plain",
-    recipesNotAddedToWeekPlan: "Recipes not added to week plan"
+    recipesNotAddedToWeekPlan: "Recipes not added to week plan",
+    preferencesSaved: "Preferences saved",
+    attentionAllergies: "I will pay special attention to these allergies",
+    customServingsPrompt: "Please enter the number of servings (1-20):",
+    invalidServings: "Please enter a valid number between 1 and 20.",
   },
   categories: {
     asian: "Asian",
@@ -139,6 +144,7 @@ export default {
     deleteAll: "Delete All",
     noLists: "No shopping lists found. Create a new shopping list or add items to your shopping list.",
     ingredientsNotAdded: "Ingredients not added to shopping list",
+    selectCategory: "Select Category",
   },
   settings: {
     title: "Settings",

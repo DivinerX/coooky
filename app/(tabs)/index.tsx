@@ -26,6 +26,7 @@ export default function MainScreen() {
   const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[]>([]);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState<boolean>(false);
   const [conversationStage, setConversationStage] = useState<'initial' | 'preferences' | 'recipe_request' | 'recipe_count' | 'servings' | 'generating'>('initial');
+  const [isAwaitingCustomServings, setIsAwaitingCustomServings] = useState<boolean>(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   const forceRender = useCallback(() => {
@@ -54,23 +55,23 @@ export default function MainScreen() {
   const openChatModal = async (isWeekly: boolean) => {
     setIsWeeklyPlanning(isWeekly);
     setChatModalVisible(true);
-    
+
     // Reset all states
     setSelectedRecipeCount(null);
     setSelectedServings(null);
     setGeneratedRecipes([]);
     setUserPreferences(null);
-    
+
     // Check if user preferences exist
     const userPrefs = await loadUserPreferences();
-    
+
     // Set the initial conversation stage
     setConversationStage(userPrefs ? 'recipe_request' : 'initial');
-    
+
     // Set initial message
     const initialMessage: Message = {
       id: Date.now().toString(),
-      text: !userPrefs ? 
+      text: !userPrefs ?
         i18n.t('chat.initialMessage') :
         i18n.t('chat.recipeRequestMessage'),
       isUser: false,
@@ -145,19 +146,18 @@ export default function MainScreen() {
             // Analyze and save the initial preferences
             const preferences = await analyzeUserInput(message);
             await saveUserPreferences(preferences);
-            
+
             // Remove loading message and move to recipe request stage
             setMessages(prev => prev.filter(msg => !msg.isLoading));
             setConversationStage('recipe_request');
-            
+
             // Confirm preferences were saved
             const confirmMessage: Message = {
               id: Date.now().toString(),
-              text: `Ich habe deine Vorlieben gespeichert. ${
-                preferences.allergies.length ? 
-                `Ich werde besonders auf diese Allergien achten: ${preferences.allergies.join(', ')}. ` : 
-                ''
-              }${i18n.t('chat.recipeRequestMessage')}`,
+              text: `${i18n.t('chat.preferencesSaved')}. ${preferences.allergies.length ?
+                  `${i18n.t('chat.attentionAllergies')}: ${preferences.allergies.join(', ')}. ` :
+                  ''
+                }${i18n.t('chat.recipeRequestMessage')}`,
               isUser: false
             };
             setMessages(prev => [...prev, confirmMessage]);
@@ -187,42 +187,55 @@ export default function MainScreen() {
         break;
 
       case 'recipe_count':
-        const count = parseRecipeCount(message);
-        if (count) {
-          setSelectedRecipeCount(count);
-          setConversationStage('servings');
-          const servingsPrompt: Message = {
-            id: Date.now().toString(),
-            text: i18n.t('chat.servingsMessage'),
-            isUser: false,
-            servingsOptions: true
-          };
-          setMessages(prev => [...prev, servingsPrompt]);
-        } else {
-          const retryPrompt: Message = {
-            id: Date.now().toString(),
-            text: i18n.t('chat.recipeCountMessage'),
-            isUser: false,
-            recipeCountOptions: true
-          };
-          setMessages(prev => [...prev, retryPrompt]);
-        }
+        // Remove this case since we're handling it in handleRecipeCountOption
         break;
 
       case 'servings':
-        const servings = parseServings(message);
-        if (servings) {
-          setSelectedServings(servings);
-          setConversationStage('generating');
-          generateRecipesWithAI(userPreferences!, selectedRecipeCount!, servings);
+        if (isAwaitingCustomServings) {
+          const customServings = parseServings(message);
+          if (customServings) {
+            setSelectedServings(customServings);
+            setIsAwaitingCustomServings(false);
+            setConversationStage('generating');
+            
+            // Add generating message before starting recipe generation
+            const generatingMessage: Message = {
+              id: Date.now().toString(),
+              text: i18n.t('chat.servingMessage', { 
+                servings: customServings, 
+                recipeCount: selectedRecipeCount 
+              }),
+              isUser: false,
+              isGenerating: true
+            };
+            setMessages(prev => [...prev, generatingMessage]);
+            
+            // Start recipe generation
+            generateRecipesWithAI(userPreferences!, selectedRecipeCount!, customServings);
+          } else {
+            const retryPrompt: Message = {
+              id: Date.now().toString(),
+              text: i18n.t('chat.invalidServings'),
+              isUser: false,
+              servingsOptions: true
+            };
+            setMessages(prev => [...prev, retryPrompt]);
+          }
         } else {
-          const retryPrompt: Message = {
-            id: Date.now().toString(),
-            text: i18n.t('chat.servingsMessage'),
-            isUser: false,
-            servingsOptions: true
-          };
-          setMessages(prev => [...prev, retryPrompt]);
+          const servings = parseServings(message);
+          if (servings) {
+            setSelectedServings(servings);
+            setConversationStage('generating');
+            generateRecipesWithAI(userPreferences!, selectedRecipeCount!, servings);
+          } else {
+            const retryPrompt: Message = {
+              id: Date.now().toString(),
+              text: i18n.t('chat.invalidServings'),
+              isUser: false,
+              servingsOptions: true
+            };
+            setMessages(prev => [...prev, retryPrompt]);
+          }
         }
         break;
     }
@@ -234,7 +247,7 @@ export default function MainScreen() {
     const randomCuisine = CUISINE_CATEGORIES[randomIndex];
 
     // Set user preferences to the random cuisine
-    setUserPreferences(`Ich möchte ${randomCuisine.name.toLowerCase()} Gerichte`);
+    setUserPreferences(`${i18n.t('chat.surpriseMe')}. Ich möchte ${randomCuisine.name.toLowerCase()} Gerichte`);
 
     // Add user message "Überrasch mich" to chat
     const userMessage = {
@@ -245,7 +258,10 @@ export default function MainScreen() {
 
     setMessages(prev => [...prev, userMessage]);
 
-    // Add AI response about the selected cuisine
+    // Set conversation stage to recipe_count immediately
+    setConversationStage('recipe_count');
+
+    // Add AI response about the selected cuisine with recipe count options
     setTimeout(() => {
       const cuisineResponse = {
         id: Date.now().toString(),
@@ -273,27 +289,36 @@ export default function MainScreen() {
     return null;
   };
 
-  const parseServings = (message: string) => {
-    // Extract servings from message
+  const parseServings = (message: string): number | null => {
+    // Handle predefined options
     if (message.includes('2x')) return 2;
     if (message.includes('3x')) return 3;
     if (message.includes('4x')) return 4;
 
-    // Extract custom servings from message
-    if (message.includes('anpassen')) return 6; // Default to 6 for custom
-
-    // Try to parse numeric values
-    const match = message.match(/\d+/);
-    if (match) {
-      return parseInt(match[0]);
+    // Handle custom numeric input
+    const numericValue = parseInt(message);
+    if (!isNaN(numericValue) && numericValue >= 1 && numericValue <= 20) {
+      return numericValue;
     }
 
     return null;
   };
 
-  const handleRecipeCountSelection = (count: number): void => {
+  const handleRecipeCountOption = (count: number): void => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: `${count}x`,
+      isUser: true,
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Set selected count
     setSelectedRecipeCount(count);
-  
+    
+    // Explicitly set the conversation stage to 'servings'
+    setConversationStage('servings');
+
+    // Add the servings prompt message
     setTimeout(() => {
       const aiResponse: Message = {
         id: Date.now().toString(),
@@ -311,7 +336,7 @@ export default function MainScreen() {
     setTimeout(() => {
       const aiResponse: Message = {
         id: Date.now().toString(),
-        text: `Gerne. Ich plane mit ${servings} Portionen pro Rezept und erstelle jetzt ${selectedRecipeCount} passende Rezepte für dich...`,
+        text: i18n.t('chat.servingMessage', { servings, recipeCount: selectedRecipeCount }),
         isUser: false,
         isGenerating: true
       };
@@ -321,6 +346,7 @@ export default function MainScreen() {
     }, 500);
   };
 
+  console.log('stage', conversationStage);
   const generateRecipesWithAI = async (
     preferences: string,
     recipeCount: number,
@@ -330,7 +356,7 @@ export default function MainScreen() {
 
     // Calculate total expected time (55 seconds as base + 5 seconds per recipe)
     const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
-    
+
     const updateProgressMessage = (stage: string, progress: number) => {
       setMessages(prev => prev.map(msg => {
         if (msg.isGenerating) {
@@ -380,25 +406,25 @@ export default function MainScreen() {
       for (let i = 1; i < stages.length; i++) {
         const stage = stages[i];
         const interval = getRandomizedInterval(baseInterval);
-        
+
         await new Promise(resolve => setTimeout(resolve, interval));
-        
+
         // Add multiple intermediate steps with micro-animations
         const intermediateSteps = 4;
-        const progressDiff = stage.progress - stages[i-1].progress;
+        const progressDiff = stage.progress - stages[i - 1].progress;
         const smallIncrement = progressDiff / intermediateSteps;
-        
+
         for (let j = 1; j <= intermediateSteps; j++) {
-          const intermediateProgress = stages[i-1].progress + (smallIncrement * j);
-          
+          const intermediateProgress = stages[i - 1].progress + (smallIncrement * j);
+
           // Add random "bounce" effect
           const bounceVariation = Math.sin(j * Math.PI / 2) * 2;
           const adjustedProgress = Math.min(100, Math.max(0, intermediateProgress + bounceVariation));
-          
+
           updateProgressMessage(stage.message(), adjustedProgress);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
-        
+
         // Settle on the actual target progress
         updateProgressMessage(stage.message(), stage.progress);
       }
@@ -411,7 +437,7 @@ export default function MainScreen() {
 
         // Smooth transition to completion
         for (let p = 95; p <= 100; p++) {
-          updateProgressMessage(i18n.t('chat.serveFinishedRecipes'), p);
+          updateProgressMessage(i18n.t('chat.progress.finalizeRecipes'), p);
           await new Promise(resolve => setTimeout(resolve, 50));
         }
 
@@ -421,7 +447,7 @@ export default function MainScreen() {
             return {
               ...msg,
               isGenerating: false,
-              progressStage: i18n.t('chat.finishedRecipes'),
+              progressStage: i18n.t('chat.progress.finalizeRecipes'),
               progressPercent: 100
             };
           }
@@ -443,7 +469,7 @@ export default function MainScreen() {
         };
         setMessages(prev => [...prev, successResponse]);
       } else {
-        throw new Error('Keine Rezepte generiert');
+        throw new Error(i18n.t('chat.errorGeneratingRecipes'));
       }
     } catch (error: any) {
       updateProgressMessage(i18n.t('chat.soupBurnt'), 0);
@@ -451,7 +477,7 @@ export default function MainScreen() {
       const errorResponse: Message = {
         id: Date.now().toString(),
         // text: `Es gab ein Problem bei der Generierung der Rezepte: ${error.message || 'Unbekannter Fehler'}. Bitte versuche es später noch einmal.`,
-        text: i18n.t('chat.errorGeneratingRecipes', { error: error.message}),
+        text: i18n.t('chat.errorGeneratingRecipes', { error: error.message }),
         isUser: false,
       };
       setMessages(prev => [...prev, errorResponse]);
@@ -460,29 +486,20 @@ export default function MainScreen() {
     }
   };
 
-  const handleRecipeCountOption = (count: number): void => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: `${count}x`,
-      isUser: true,
-    };
-    setMessages(prev => [...prev, userMessage]);
-    handleRecipeCountSelection(count);
-  };
-
   const handleServingsOption = (servings: number | 'custom'): void => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: servings === 'custom' ? i18n.t('chat.customize') : `${servings}x`,
+      text: servings === 'custom' ? i18n.t('common.custom') : `${servings}x`,
       isUser: true,
-    };
+    };  
     setMessages(prev => [...prev, userMessage]);
 
     if (servings === 'custom') {
+      setIsAwaitingCustomServings(true);
       setTimeout(() => {
         const aiResponse: Message = {
           id: Date.now().toString(),
-          text: i18n.t('chat.pleaseSpecifyHowManyPortions'),
+          text: i18n.t('chat.customServingsPrompt'),
           isUser: false,
         };
         setMessages(prev => [...prev, aiResponse]);
@@ -497,7 +514,7 @@ export default function MainScreen() {
       if (!generatedRecipes || generatedRecipes.length === 0) return;
 
       // Extract ingredients from generated recipes
-      const ingredients = generatedRecipes.flatMap(recipe => 
+      const ingredients = generatedRecipes.flatMap(recipe =>
         recipe.ingredients.map(ingredient => ({
           name: ingredient.name,
           amount: ingredient.amount || '',
@@ -523,7 +540,7 @@ export default function MainScreen() {
           ]
         );
       }
-      
+
       // Show confirmation message in chat
       const confirmationMessage: Message = {
         id: Date.now().toString(),
@@ -533,7 +550,7 @@ export default function MainScreen() {
       setMessages(prev => [...prev, confirmationMessage]);
     } catch (error) {
       console.error('Error adding to shopping list:', error);
-      
+
       // Show error alert
       if (Platform.OS === 'web') {
         window.alert(i18n.t('chat.errorAddingToShoppingList'));
@@ -557,10 +574,10 @@ export default function MainScreen() {
   const navigateToShoppingList = async () => {
     // Close modal and navigate to shopping list
     setChatModalVisible(false);
-    
+
     // Small delay to ensure the modal is closed before navigation
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // Navigate to shopping list
     router.push('/shopping');
   };
@@ -598,7 +615,7 @@ export default function MainScreen() {
     // Create a new week plan if none exists
     const weekPlans = await loadWeekPlans();
     let currentWeekPlan;
-    
+
     if (weekPlans.length === 0) {
       currentWeekPlan = await addNewWeekPlan(0); // Create plan for current week
     } else {
@@ -672,7 +689,7 @@ export default function MainScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      
+
       {/* Chat Modal */}
       <ChatModal
         isGeneratingRecipes={isGeneratingRecipes}
