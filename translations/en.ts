@@ -173,5 +173,13 @@ export default {
     favoritesPlaceholder: "e.g. pasta, rice...",
     allergiesPlaceholder: "e.g. nuts, gluten...",
     trendsPlaceholder: "e.g. Asian, Italian...",
+  },
+  subscription: {
+    title: "Premium Features",
+    description: "Get unlimited recipe generations and unlock all premium features",
+    monthly: "Monthly Subscription",
+    annual: "Annual Subscription",
+    freeTrialRemaining: "{{count}} free generations remaining",
+    subscribe: "Subscribe Now",
   }
 };

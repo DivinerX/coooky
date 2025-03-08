@@ -11,7 +11,9 @@ import { ChatModal } from '@/components/ChatModal';
 import { addRecipesToWeekPlan, addNewWeekPlan, loadWeekPlans } from '@/utils/weekPlanManager';
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
 import i18n, { onLanguageChange } from '@/utils/i18n';
-
+import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { getSubscriptionProducts, checkSubscriptionStatus, getFreeGenerationsRemaining, incrementGenerationCount, initializePurchases } from '@/utils/purchaseManager';
+import { IAPItemDetails } from 'expo-in-app-purchases';
 export default function MainScreen() {
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(0);
@@ -29,6 +31,8 @@ export default function MainScreen() {
   const [isAwaitingCustomServings, setIsAwaitingCustomServings] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const [subscriptionModalVisible, setSubscriptionModalVisible] = useState(false);
+  const [subscriptionProducts, setSubscriptionProducts] = useState<IAPItemDetails[]>([]);
 
   const forceRender = useCallback(() => {
     setForceUpdate(prev => prev + 1);
@@ -52,6 +56,32 @@ export default function MainScreen() {
       }, 100);
     }
   }, [messages]);
+
+  useEffect(() => {
+    const initPurchases = async () => {
+      if (Platform.OS !== 'web') {
+        await initializePurchases();
+        const products = await getSubscriptionProducts();
+        setSubscriptionProducts(products || []);
+      }
+    };
+    initPurchases();
+  }, []);
+
+  const updateProgressMessage = (stage: string, progress: number) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.isGenerating) {
+        return {
+          ...msg,
+          text: i18n.t('chat.servingMessage', { servings: selectedServings, recipeCount: selectedRecipeCount }),
+          progressStage: stage,
+          progressPercent: progress,
+          isGenerating: true
+        };
+      }
+      return msg;
+    }));
+  };
 
   const openChatModal = async (isWeekly: boolean) => {
     setIsWeeklyPlanning(isWeekly);
@@ -352,30 +382,21 @@ export default function MainScreen() {
     recipeCount: number,
     servings: number
   ): Promise<void> => {
-    setIsGeneratingRecipes(true);
-    setIsProcessing(true);
-
-    // Calculate total expected time (55 seconds as base + 5 seconds per recipe)
-    const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
-
-    const updateProgressMessage = (stage: string, progress: number) => {
-      setMessages(prev => prev.map(msg => {
-        if (msg.isGenerating) {
-          return {
-            ...msg,
-            text: i18n.t('chat.servingMessage', { servings, recipeCount }),
-            progressStage: stage,
-            progressPercent: progress,
-            isGenerating: true
-          };
-        }
-        return msg;
-      }));
-    };
-
     try {
-      // Start the actual API call early
-      const recipePromise = generateCookingSuggestions(preferences, recipeCount, servings);
+      // Check subscription status
+      const hasSubscription = await checkSubscriptionStatus();
+      const freeGenerations = await getFreeGenerationsRemaining();
+
+      if (!hasSubscription && freeGenerations === 0) {
+        setSubscriptionModalVisible(true);
+        return;
+      }
+
+      setIsGeneratingRecipes(true);
+      setIsProcessing(true);
+
+      // Calculate total expected time (55 seconds as base + 5 seconds per recipe)
+      const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
 
       // Get stages dynamically using i18n
       const stages = [
@@ -431,7 +452,7 @@ export default function MainScreen() {
       }
 
       // Wait for the API response
-      const result = await recipePromise;
+      const result = await generateCookingSuggestions(preferences, recipeCount, servings);
 
       if (result && result.recipes && result.recipes.length > 0) {
         setGeneratedRecipes(result.recipes);
@@ -469,6 +490,11 @@ export default function MainScreen() {
           isUser: false,
         };
         setMessages(prev => [...prev, successResponse]);
+
+        // If generation was successful and user doesn't have a subscription
+        if (!hasSubscription) {
+          await incrementGenerationCount();
+        }
       } else {
         throw new Error(i18n.t('chat.errorGeneratingRecipes'));
       }
@@ -719,6 +745,16 @@ export default function MainScreen() {
         scrollViewRef={scrollViewRef}
         addToWeekPlan={handleAddToWeekPlan}
         isProcessing={isProcessing}
+      />
+
+      <SubscriptionModal
+        visible={subscriptionModalVisible}
+        onClose={() => setSubscriptionModalVisible(false)}
+        onSubscribe={() => {
+          setSubscriptionModalVisible(false);
+          generateRecipesWithAI(userPreferences!, selectedRecipeCount!, selectedServings!);
+        }}
+        products={subscriptionProducts}
       />
     </SafeAreaView>
   );
