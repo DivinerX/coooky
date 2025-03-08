@@ -2,22 +2,42 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { House, ChefHat, Calendar, ShoppingCart, Settings } from 'lucide-react-native';
 import PlatformIcon from '@/components/PlatformIcon';
-import i18n, { onLanguageChange } from '@/utils/i18n';
+import i18n, { onLanguageChange, initializeLanguage } from '@/utils/i18n';
 import { useEffect, useState } from 'react';
 
 export default function TabLayout() {
   const [, setLanguageUpdate] = useState(0);
+  const [isLanguageInitialized, setIsLanguageInitialized] = useState(false);
 
   useEffect(() => {
+    // Initialize language when component mounts
+    const init = async () => {
+      await initializeLanguage();
+      setIsLanguageInitialized(true);
+    };
+    init();
+
     // Subscribe to language changes
     const unsubscribe = onLanguageChange(() => {
-      // Force re-render by updating state
       setLanguageUpdate(prev => prev + 1);
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
   }, []);
+
+  // Don't render tabs until language is initialized
+  if (!isLanguageInitialized) {
+    return null;
+  }
+
+  // Move tab titles into the render function so they update when component re-renders
+  const tabTitles = {
+    discover: i18n.t('tabs.discover'),
+    cook: i18n.t('tabs.cook'),
+    planner: i18n.t('tabs.planner'),
+    shopping: i18n.t('tabs.shopping'),
+    settings: i18n.t('tabs.settings'),
+  };
 
   return (
     <Tabs
@@ -37,35 +57,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: i18n.t('tabs.discover'),
+          title: tabTitles.discover,
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={House} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="cook"
         options={{
-          title: i18n.t('tabs.cook'),
+          title: tabTitles.cook,
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={ChefHat} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="planner"
         options={{
-          title: i18n.t('tabs.planner'),
+          title: tabTitles.planner,
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={Calendar} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="shopping"
         options={{
-          title: i18n.t('tabs.shopping'),
+          title: tabTitles.shopping,
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={ShoppingCart} color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: i18n.t('tabs.settings'),
+          title: tabTitles.settings,
           tabBarIcon: ({ color, size }) => <PlatformIcon icon={Settings} color={color} size={size} />,
         }}
       />

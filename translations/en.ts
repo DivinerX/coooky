@@ -67,6 +67,7 @@ export default {
     step: "Step",
     of: "of",
     changeRecipe: "Change Recipe",
+    recipes: "Recipes",
   },
   chat: {
     cookingAssistant: "Cooking Assistant",
@@ -103,7 +104,7 @@ export default {
     shoppingList: "Shopping List",
     shoppingListUpdated: "Shopping List Updated",
     errorAddingToShoppingList: "Error adding to shopping list",
-    recipesAddedToWeekPlan: "Recipes added to week plain",
+    recipesAddedToWeekPlan: "Recipes added to week plan",
     recipesNotAddedToWeekPlan: "Recipes not added to week plan",
     preferencesSaved: "Preferences saved",
     attentionAllergies: "I will pay special attention to these allergies",
@@ -143,7 +144,7 @@ export default {
     addItemPlaceholder: "Add item...",
     deleteAll: "Delete All",
     noLists: "No shopping lists found. Create a new shopping list or add items to your shopping list.",
-    ingredientsNotAdded: "Ingredients not added to shopping list",
+    ingredientsNotAdded: "Ingredients not added to shopping list.",
     selectCategory: "Select Category",
   },
   settings: {

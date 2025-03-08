@@ -27,6 +27,7 @@ export default function MainScreen() {
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState<boolean>(false);
   const [conversationStage, setConversationStage] = useState<'initial' | 'preferences' | 'recipe_request' | 'recipe_count' | 'servings' | 'generating'>('initial');
   const [isAwaitingCustomServings, setIsAwaitingCustomServings] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   const forceRender = useCallback(() => {
@@ -305,6 +306,9 @@ export default function MainScreen() {
   };
 
   const handleRecipeCountOption = (count: number): void => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: `${count}x`,
@@ -312,13 +316,9 @@ export default function MainScreen() {
     };
     setMessages(prev => [...prev, userMessage]);
     
-    // Set selected count
     setSelectedRecipeCount(count);
-    
-    // Explicitly set the conversation stage to 'servings'
     setConversationStage('servings');
 
-    // Add the servings prompt message
     setTimeout(() => {
       const aiResponse: Message = {
         id: Date.now().toString(),
@@ -327,6 +327,7 @@ export default function MainScreen() {
         servingsOptions: true
       };
       setMessages(prev => [...prev, aiResponse]);
+      setIsProcessing(false);
     }, 500);
   };
 
@@ -346,13 +347,13 @@ export default function MainScreen() {
     }, 500);
   };
 
-  console.log('stage', conversationStage);
   const generateRecipesWithAI = async (
     preferences: string,
     recipeCount: number,
     servings: number
   ): Promise<void> => {
     setIsGeneratingRecipes(true);
+    setIsProcessing(true);
 
     // Calculate total expected time (55 seconds as base + 5 seconds per recipe)
     const totalExpectedTime = 55000 + (recipeCount * 5000); // in milliseconds
@@ -476,17 +477,20 @@ export default function MainScreen() {
       console.error('Error generating recipes:', error);
       const errorResponse: Message = {
         id: Date.now().toString(),
-        // text: `Es gab ein Problem bei der Generierung der Rezepte: ${error.message || 'Unbekannter Fehler'}. Bitte versuche es später noch einmal.`,
         text: i18n.t('chat.errorGeneratingRecipes', { error: error.message }),
         isUser: false,
       };
       setMessages(prev => [...prev, errorResponse]);
     } finally {
       setIsGeneratingRecipes(false);
+      setIsProcessing(false);
     }
   };
 
   const handleServingsOption = (servings: number | 'custom'): void => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: servings === 'custom' ? i18n.t('common.custom') : `${servings}x`,
@@ -503,9 +507,11 @@ export default function MainScreen() {
           isUser: false,
         };
         setMessages(prev => [...prev, aiResponse]);
+        setIsProcessing(false);
       }, 500);
     } else {
-      handleServingsSelection(servings);
+      handleServingsSelection(servings as number);
+      setIsProcessing(false);
     }
   };
 
@@ -519,7 +525,7 @@ export default function MainScreen() {
           name: ingredient.name,
           amount: ingredient.amount || '',
           unit: ingredient.unit || '',
-          category: ingredient.category || 'Sonstiges'
+          category: ingredient.category || 'other'
         }))
       );
 
@@ -712,6 +718,7 @@ export default function MainScreen() {
         startCookingRecipe={startCookingRecipe}
         scrollViewRef={scrollViewRef}
         addToWeekPlan={handleAddToWeekPlan}
+        isProcessing={isProcessing}
       />
     </SafeAreaView>
   );

@@ -43,13 +43,13 @@ export const initializeLanguage = async () => {
       // Save the device language as user preference
       await AsyncStorage.setItem('@user_language', deviceLanguage);
     } else {
-      i18n.locale = 'de'; // Default to German
+      i18n.locale = 'en'; // Default to English
       // Save the default language as user preference
-      await AsyncStorage.setItem('@user_language', 'de');
+      await AsyncStorage.setItem('@user_language', 'en');
     }
   } catch (error) {
     console.error('Error loading language:', error);
-    i18n.locale = 'de'; // Default to German on error
+    i18n.locale = 'en'; // Default to English on error
   }
 };
 

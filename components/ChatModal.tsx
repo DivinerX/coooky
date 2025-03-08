@@ -28,6 +28,7 @@ interface IChatModalProps {
   startCookingRecipe: (recipe: any) => void;
   scrollViewRef: any;
   addToWeekPlan: () => Promise<void>;
+  isProcessing: boolean;
 }
 
 export const ChatModal = ({
@@ -51,6 +52,7 @@ export const ChatModal = ({
   startCookingRecipe,
   scrollViewRef,
   addToWeekPlan,
+  isProcessing,
 }: IChatModalProps) => {
   const [showNavigateToShoppingList, setShowNavigateToShoppingList] = useState(false);
   const [selectedCount, setSelectedCount] = useState<number | null>(null);
@@ -179,18 +181,15 @@ export const ChatModal = ({
                         style={[
                           styles.optionButton,
                           selectedCount === count && styles.optionButtonSelected,
-                          selectedCount !== null && selectedCount !== count && styles.optionButtonDisabled
+                          (selectedCount !== null || isProcessing) && styles.optionButtonDisabled
                         ]}
-                        onPress={() => {
-                          setSelectedCount(count);
-                          handleRecipeCountOption(count);
-                        }}
-                        disabled={selectedCount !== null}
+                        onPress={() => handleRecipeCountOption(count)}
+                        disabled={selectedCount !== null || isProcessing}
                       >
                         <Text style={[
                           styles.optionText,
                           selectedCount === count && styles.optionTextSelected,
-                          selectedCount !== null && selectedCount !== count && styles.optionTextDisabled
+                          (selectedCount !== null || isProcessing) && styles.optionTextDisabled
                         ]}>
                           {count}x
                         </Text>
@@ -208,18 +207,15 @@ export const ChatModal = ({
                         style={[
                           styles.optionButton,
                           selectedServingCount === servings && styles.optionButtonSelected,
-                          selectedServingCount !== null && selectedServingCount !== servings && styles.optionButtonDisabled
+                          (selectedServingCount !== null || isProcessing) && styles.optionButtonDisabled
                         ]}
-                        onPress={() => {
-                          setSelectedServingCount(servings);
-                          handleServingsOption(servings);
-                        }}
-                        disabled={selectedServingCount !== null}
+                        onPress={() => handleServingsOption(servings)}
+                        disabled={selectedServingCount !== null || isProcessing}
                       >
                         <Text style={[
                           styles.optionText,
                           selectedServingCount === servings && styles.optionTextSelected,
-                          selectedServingCount !== null && selectedServingCount !== servings && styles.optionTextDisabled
+                          (selectedServingCount !== null || isProcessing) && styles.optionTextDisabled
                         ]}>
                           {servings}x
                         </Text>
@@ -229,18 +225,18 @@ export const ChatModal = ({
                       style={[
                         styles.optionButton,
                         selectedServingCount === 'custom' && styles.optionButtonSelected,
-                        selectedServingCount !== null && selectedServingCount !== 'custom' && styles.optionButtonDisabled
+                        (selectedServingCount !== null || isProcessing) && styles.optionButtonDisabled
                       ]}
                       onPress={() => {
                         setSelectedServingCount('custom');
                         handleServingsOption('custom');
                       }}
-                      disabled={selectedServingCount !== null}
+                      disabled={selectedServingCount !== null || isProcessing}
                     >
                       <Text style={[
                         styles.optionText,
                         selectedServingCount === 'custom' && styles.optionTextSelected,
-                        selectedServingCount !== null && selectedServingCount !== 'custom' && styles.optionTextDisabled
+                        (selectedServingCount !== null || isProcessing) && styles.optionTextDisabled
                       ]}>
                         {i18n.t('common.custom')}
                       </Text>
@@ -334,22 +330,29 @@ export const ChatModal = ({
 
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.messageInput}
+              style={[
+                styles.messageInput,
+                (isGeneratingRecipes || isProcessing) && styles.inputDisabled
+              ]}
               placeholder={i18n.t('chat.writeMessage')}
               value={currentMessage}
               onChangeText={setCurrentMessage}
               onSubmitEditing={handleSendMessage}
               multiline
-              editable={!isGeneratingRecipes}
+              editable={!isGeneratingRecipes && !isProcessing}
             />
             <TouchableOpacity
               style={[
                 styles.sendButton,
                 isRecording && styles.recordingActive,
-                isGeneratingRecipes && styles.buttonDisabled
+                (isGeneratingRecipes || isProcessing) && styles.buttonDisabled
               ]}
-              onPress={isGeneratingRecipes ? undefined : (isRecording ? toggleRecording : currentMessage.trim() ? handleSendMessage : toggleRecording)}
-              disabled={isGeneratingRecipes}
+              onPress={
+                isGeneratingRecipes || isProcessing 
+                  ? undefined 
+                  : (isRecording ? toggleRecording : currentMessage.trim() ? handleSendMessage : toggleRecording)
+              }
+              disabled={isGeneratingRecipes || isProcessing}
             >
               {isRecording ? (
                 <Mic size={20} color="#FFF" />
@@ -633,5 +636,9 @@ const styles = StyleSheet.create({
   },
   optionTextDisabled: {
     color: '#999',
+  },
+  inputDisabled: {
+    opacity: 0.5,
+    backgroundColor: '#E0E0E0',
   },
 });

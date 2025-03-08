@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   categoryList: {
-    maxHeight: 400,
+    maxHeight: 450,
   },
   categoryOption: {
     padding: 15,

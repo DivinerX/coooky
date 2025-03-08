@@ -107,17 +107,11 @@ export const addToShoppingList = async (ingredients, listId) => {
   let listIndex = shoppingLists.findIndex(list => list.id === listId);
 
   if (listIndex === -1) {
-    console.error('Shopping list not found:', {
-      providedListId: listId,
-      availableLists: shoppingLists.map(list => ({ id: list.id, name: list.name }))
-    });
-    // Create a new list if none exists
     const newList = await addNewShoppingList(0);
-    listIndex = 0; // The new list is added at the beginning of the array
+    listIndex = 0;
     console.log('Created new shopping list:', newList.id);
   }
 
-  // Categorize ingredients
   const categorizedIngredients = {};
   ingredients.forEach(ingredient => {
     const category = ingredient.category || 'Sonstiges';

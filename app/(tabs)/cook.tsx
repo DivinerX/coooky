@@ -222,7 +222,7 @@ export default function CookScreen() {
                     >
                       <Text style={styles.dayTitle}>{i18n.t(`common.days.${day}`)}</Text>
                       {recipes.length > 0 && (
-                        <Text style={styles.recipeCount}>{recipes.length} Rezepte</Text>
+                        <Text style={styles.recipeCount}>{recipes.length} {i18n.t('cook.recipes')}</Text>
                       )}
                     </TouchableOpacity>
                     

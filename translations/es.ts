@@ -67,6 +67,7 @@ export default {
     step: "Paso",
     of: "de",
     changeRecipe: "Cambiar receta",
+    recipes: "Recetas",
   },
   chat: {
     cookingAssistant: "Asistente de Cocina",
