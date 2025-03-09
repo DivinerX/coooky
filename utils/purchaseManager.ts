@@ -1,4 +1,11 @@
-import * as InAppPurchases from 'expo-in-app-purchases';
+import RNIap, {
+  Product,
+  PurchaseError,
+  finishTransaction,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+} from 'react-native-iap';
+// import SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
@@ -6,40 +13,73 @@ import { Platform } from 'react-native';
 export const SUBSCRIPTION_SKUS = {
   MONTHLY: 'com.kochassistent.subscription.monthly',
   ANNUAL: 'com.kochassistent.subscription.annual'
-};
+} as const;
 
 const FREE_GENERATIONS_KEY = 'free_recipe_generations';
-const MAX_FREE_GENERATIONS = 3;
+const MAX_FREE_GENERATIONS = 1;
+
+let purchaseUpdateSubscription: any;
+let purchaseErrorSubscription: any;
 
 export async function initializePurchases() {
+  if (Platform.OS === 'web') return;
+
   try {
-    await InAppPurchases.connectAsync();
+    await RNIap.initConnection();
+    
+    // Set up listeners
+    purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+      const receipt = purchase.transactionReceipt;
+      if (receipt) {
+        try {
+          await finishTransaction({ purchase });
+          await AsyncStorage.setItem('hasActiveSubscription', 'true');
+        } catch (error) {
+          console.error('Error finishing transaction:', error);
+        }
+      }
+    });
+
+    purchaseErrorSubscription = purchaseErrorListener((error: PurchaseError) => {
+      console.error('Purchase error:', error);
+    });
+
   } catch (error) {
     console.error('Error initializing purchases:', error);
   }
 }
 
-export async function getSubscriptionProducts() {
-  try {
-    const { responseCode, results } = await InAppPurchases.getProductsAsync([
-      SUBSCRIPTION_SKUS.MONTHLY,
-      SUBSCRIPTION_SKUS.ANNUAL
-    ]);
+export function endPurchaseConnection() {
+  if (purchaseUpdateSubscription) {
+    purchaseUpdateSubscription.remove();
+  }
+  if (purchaseErrorSubscription) {
+    purchaseErrorSubscription.remove();
+  }
+  RNIap.endConnection();
+}
 
-    if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-      return results;
-    }
-    return [];
+export async function getSubscriptionProducts(): Promise<Product[]> {
+  if (Platform.OS === 'web') return [];
+
+  try {
+    const products = await RNIap.getProducts({
+      skus: [SUBSCRIPTION_SKUS.MONTHLY, SUBSCRIPTION_SKUS.ANNUAL]
+    });
+    return products;
   } catch (error) {
     console.error('Error getting products:', error);
     return [];
   }
 }
 
-export async function purchaseSubscription(sku: string) {
+export async function purchaseSubscription(sku: string): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+
   try {
-    await InAppPurchases.purchaseItemAsync(sku);
-    await AsyncStorage.setItem('hasActiveSubscription', 'true');
+    await RNIap.requestSubscription({
+      sku: sku
+    });
     return true;
   } catch (error) {
     console.error('Error purchasing subscription:', error);
@@ -48,7 +88,7 @@ export async function purchaseSubscription(sku: string) {
 }
 
 export async function checkSubscriptionStatus() {
-  if (Platform.OS === 'web') return true;
+  if (Platform.OS === 'web') return false;
   
   try {
     const hasSubscription = await AsyncStorage.getItem('hasActiveSubscription');
@@ -63,6 +103,7 @@ export async function getFreeGenerationsRemaining() {
   try {
     const used = await AsyncStorage.getItem(FREE_GENERATIONS_KEY);
     const usedCount = used ? parseInt(used) : 0;
+    await AsyncStorage.setItem(FREE_GENERATIONS_KEY, (usedCount).toString());
     return Math.max(0, MAX_FREE_GENERATIONS - usedCount);
   } catch (error) {
     console.error('Error getting free generations:', error);

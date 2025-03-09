@@ -98,7 +98,7 @@ export default {
     surpriseMeMessage: "I'll surprise you with {{cuisine}} {{icon}} recipes! How many recipes should I suggest?",
     portions: "Portions",
     generatedRecipes: "Generated recipes",
-    generatedRecipesResult: "Here are {{count}} recipes based on your preferences:",
+    generatedRecipesResult: "Here are {{count}} recipes based on your preferences:\n\n",
     addToShoppingList: "Add to shopping list",
     addToWeekPlan: "Add to week plan",
     shoppingList: "Shopping List",

@@ -62,6 +62,8 @@ export const ChatModal = ({
 
   useEffect(() => {
     setSurpriseMeClicked(false);
+    setWeekPlanButtonClicked(false);
+    setShowNavigateToShoppingList(false);
   }, [chatModalVisible]);
 
   const handleAddToShoppingList = async () => {

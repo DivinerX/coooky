@@ -98,7 +98,7 @@ export default {
     surpriseMeMessage: "¡Te sorprenderé con recetas {{cuisine}} {{icon}}! ¿Cuántas recetas quieres que sugiera?",
     portions: "Porciones",
     generatedRecipes: "Recetas generadas",
-    generatedRecipesResult: "Aquí hay {{count}} recetas basadas en tus preferencias:",
+    generatedRecipesResult: "Aquí hay {{count}} recetas basadas en tus preferencias:\n\n",
     addToShoppingList: "Añadir a la lista de compras",
     addToWeekPlan: "Añadir al plan semanal",
     shoppingList: "Lista de compras",
@@ -173,5 +173,13 @@ export default {
     favoritesPlaceholder: "p. ej. pasta, arroz...",
     allergiesPlaceholder: "p. ej. nueces, gluten...",
     trendsPlaceholder: "p. ej. asiático, italiano...",
+  },
+  subscription: {
+    title: "Características Premium",
+    description: "Obtenga generaciones ilimitadas de recetas y desbloque todas las características premium",
+    monthly: "Suscripción Mensual",
+    annual: "Suscripción Anual",
+    freeTrialRemaining: "{{count}} generaciones gratuitas restantes",
+    subscribe: "Suscríbete ahora",
   }
 };

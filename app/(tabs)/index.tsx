@@ -12,8 +12,9 @@ import { addRecipesToWeekPlan, addNewWeekPlan, loadWeekPlans } from '@/utils/wee
 import { loadUserPreferences, saveUserPreferences, analyzeUserInput } from '@/utils/userPreferencesManager';
 import i18n, { onLanguageChange } from '@/utils/i18n';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
-import { getSubscriptionProducts, checkSubscriptionStatus, getFreeGenerationsRemaining, incrementGenerationCount, initializePurchases } from '@/utils/purchaseManager';
-import { IAPItemDetails } from 'expo-in-app-purchases';
+import { getSubscriptionProducts, checkSubscriptionStatus, getFreeGenerationsRemaining, incrementGenerationCount, initializePurchases, endPurchaseConnection } from '@/utils/purchaseManager';
+import { Product } from 'react-native-iap';
+
 export default function MainScreen() {
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(0);
@@ -32,7 +33,7 @@ export default function MainScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [subscriptionModalVisible, setSubscriptionModalVisible] = useState(false);
-  const [subscriptionProducts, setSubscriptionProducts] = useState<IAPItemDetails[]>([]);
+  const [subscriptionProducts, setSubscriptionProducts] = useState<Product[]>([]);
 
   const forceRender = useCallback(() => {
     setForceUpdate(prev => prev + 1);
@@ -45,6 +46,10 @@ export default function MainScreen() {
 
     return () => unsubscribe();
   }, [forceRender]);
+
+  useEffect(() => {
+    setIsProcessing(false);
+  }, [chatModalVisible]);
 
   useEffect(() => {
     // Keep the scroll behavior
@@ -62,18 +67,32 @@ export default function MainScreen() {
       if (Platform.OS !== 'web') {
         await initializePurchases();
         const products = await getSubscriptionProducts();
-        setSubscriptionProducts(products || []);
+        setSubscriptionProducts(products);
       }
     };
     initPurchases();
-  }, []);
 
-  const updateProgressMessage = (stage: string, progress: number) => {
+    return () => {
+      if (Platform.OS !== 'web') {
+        endPurchaseConnection();
+      }
+    };
+  }, []);
+  // Update the updateProgressMessage function definition
+  const updateProgressMessage = (
+    stage: string,
+    progress: number,
+    servings: number,
+    recipeCount: number
+  ) => {
     setMessages(prev => prev.map(msg => {
       if (msg.isGenerating) {
         return {
           ...msg,
-          text: i18n.t('chat.servingMessage', { servings: selectedServings, recipeCount: selectedRecipeCount }),
+          text: i18n.t('chat.servingMessage', {
+            servings: servings.toString(),
+            recipeCount: recipeCount.toString()
+          }),
           progressStage: stage,
           progressPercent: progress,
           isGenerating: true
@@ -186,8 +205,8 @@ export default function MainScreen() {
             const confirmMessage: Message = {
               id: Date.now().toString(),
               text: `${i18n.t('chat.preferencesSaved')}. ${preferences.allergies.length ?
-                  `${i18n.t('chat.attentionAllergies')}: ${preferences.allergies.join(', ')}. ` :
-                  ''
+                `${i18n.t('chat.attentionAllergies')}: ${preferences.allergies.join(', ')}. ` :
+                ''
                 }${i18n.t('chat.recipeRequestMessage')}`,
               isUser: false
             };
@@ -228,22 +247,23 @@ export default function MainScreen() {
             setSelectedServings(customServings);
             setIsAwaitingCustomServings(false);
             setConversationStage('generating');
-            
+
             // Add generating message before starting recipe generation
             const generatingMessage: Message = {
               id: Date.now().toString(),
-              text: i18n.t('chat.servingMessage', { 
-                servings: customServings, 
-                recipeCount: selectedRecipeCount 
+              text: i18n.t('chat.servingMessage', {
+                servings: customServings.toString(),
+                recipeCount: selectedRecipeCount?.toString()
               }),
               isUser: false,
               isGenerating: true
             };
             setMessages(prev => [...prev, generatingMessage]);
-            
+
             // Start recipe generation
             generateRecipesWithAI(userPreferences!, selectedRecipeCount!, customServings);
           } else {
+            setSelectedServings(null);
             const retryPrompt: Message = {
               id: Date.now().toString(),
               text: i18n.t('chat.invalidServings'),
@@ -345,7 +365,7 @@ export default function MainScreen() {
       isUser: true,
     };
     setMessages(prev => [...prev, userMessage]);
-    
+
     setSelectedRecipeCount(count);
     setConversationStage('servings');
 
@@ -363,17 +383,20 @@ export default function MainScreen() {
 
   const handleServingsSelection = (servings: number): void => {
     setSelectedServings(servings);
-
+    console.log("setSelectedServings", servings);
     setTimeout(() => {
       const aiResponse: Message = {
         id: Date.now().toString(),
-        text: i18n.t('chat.servingMessage', { servings, recipeCount: selectedRecipeCount }),
+        text: i18n.t('chat.servingMessage', {
+          servings: servings.toString(),
+          recipeCount: selectedRecipeCount?.toString()
+        }),
         isUser: false,
         isGenerating: true
       };
       setMessages(prev => [...prev, aiResponse]);
 
-      generateRecipesWithAI(userPreferences!, selectedRecipeCount!, servings);
+      generateRecipesWithAI(userPreferences!, selectedRecipeCount!, servings!);
     }, 500);
   };
 
@@ -387,6 +410,8 @@ export default function MainScreen() {
       const hasSubscription = await checkSubscriptionStatus();
       const freeGenerations = await getFreeGenerationsRemaining();
 
+      console.log("hasSubscription", hasSubscription);
+      console.log("freeGenerations", freeGenerations);
       if (!hasSubscription && freeGenerations === 0) {
         setSubscriptionModalVisible(true);
         return;
@@ -422,7 +447,12 @@ export default function MainScreen() {
       };
 
       // Show initial stage with bounce animation
-      updateProgressMessage(stages[0].message(), stages[0].progress);
+      updateProgressMessage(
+        stages[0].message(),
+        stages[0].progress,
+        servings,
+        recipeCount
+      );
 
       // Progress through stages with randomized timing and bounce effects
       for (let i = 1; i < stages.length; i++) {
@@ -442,13 +472,22 @@ export default function MainScreen() {
           // Add random "bounce" effect
           const bounceVariation = Math.sin(j * Math.PI / 2) * 2;
           const adjustedProgress = Math.min(100, Math.max(0, intermediateProgress + bounceVariation));
-
-          updateProgressMessage(stage.message(), adjustedProgress);
+          updateProgressMessage(
+            stage.message(),
+            adjustedProgress,
+            servings,
+            recipeCount
+          );
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         // Settle on the actual target progress
-        updateProgressMessage(stage.message(), stage.progress);
+        updateProgressMessage(
+          stage.message(),
+          stage.progress,
+          servings,
+          recipeCount
+        );
       }
 
       // Wait for the API response
@@ -459,7 +498,12 @@ export default function MainScreen() {
 
         // Smooth transition to completion
         for (let p = 95; p <= 100; p++) {
-          updateProgressMessage(i18n.t('chat.progress.finalizeRecipes'), p);
+          updateProgressMessage(
+            i18n.t('chat.progress.finalizeRecipes'),
+            p,
+            servings,
+            recipeCount
+          );
           await new Promise(resolve => setTimeout(resolve, 50));
         }
 
@@ -499,7 +543,7 @@ export default function MainScreen() {
         throw new Error(i18n.t('chat.errorGeneratingRecipes'));
       }
     } catch (error: any) {
-      updateProgressMessage(i18n.t('chat.soupBurnt'), 0);
+      updateProgressMessage(i18n.t('chat.soupBurnt'), 0, servings, recipeCount);
       console.error('Error generating recipes:', error);
       const errorResponse: Message = {
         id: Date.now().toString(),
@@ -521,7 +565,7 @@ export default function MainScreen() {
       id: Date.now().toString(),
       text: servings === 'custom' ? i18n.t('common.custom') : `${servings}x`,
       isUser: true,
-    };  
+    };
     setMessages(prev => [...prev, userMessage]);
 
     if (servings === 'custom') {

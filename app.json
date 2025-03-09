@@ -9,7 +9,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kochapp.app"
+      "bundleIdentifier": "com.kochapp.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "web": {
       "bundler": "metro",
@@ -17,15 +20,19 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-in-app-purchases",
-        {
-          "appleTeamId": "U3H5S3GC83"
-        }
-      ]
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "de130265-b633-4df1-bc97-1164b451ef8f"
+      }
+    },
+    "owner": "spgdev"
   }
 }

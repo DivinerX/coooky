@@ -4,12 +4,12 @@ import { X } from 'lucide-react-native';
 import PlatformIcon from './PlatformIcon';
 import i18n from '@/utils/i18n';
 import { SUBSCRIPTION_SKUS, purchaseSubscription } from '@/utils/purchaseManager';
-
+import { Product } from 'react-native-iap';
 interface SubscriptionModalProps {
   visible: boolean;
   onClose: () => void;
   onSubscribe: () => void;
-  products: any[];
+  products: Product[];
 }
 
 export const SubscriptionModal = ({ visible, onClose, onSubscribe, products }: SubscriptionModalProps) => {
